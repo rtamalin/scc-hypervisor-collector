@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+
+cmd_name="$(basename "${BASH_SOURCE[0]}")"
+cmd_dir="$(dirname "$(readlink -e "${BASH_SOURCE[0]}")")"
+base_dir="$(dirname "${cmd_dir}")"
+venv_bin="${base_dir}/.dev_venv/bin"
+
+if [[ -d "${venv_bin}" ]]; then
+    PATH="${venv_bin}:${PATH}"
+fi
+
+exec "${cmd_name}" "${@}"
+
+# vim:shiftwidth=4:tabstop=4:expandtab
