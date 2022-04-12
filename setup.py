@@ -6,7 +6,8 @@
 # Copyright (c) 2021 SUSE LLC
 #
 # This file is part of scc-hypervisor-collector an api and
-# command line utilities for creating mash job documents in the Public Cloud.
+# command line utilities for collecting hypervisor and
+# virtual instance information and upload to SCC.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
