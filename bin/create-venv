@@ -14,7 +14,7 @@ else
 fi
 
 if ${venv_cmd} "${venv_dir}"; then
-    "${venv_dir}/bin/pip" install --upgrade -r "${venv_reqs}"
+    "${venv_dir}/bin/pip" install --upgrade pip setuptools wheel -r "${venv_reqs}"
 else
     echo "ERROR: Failed to create a Python3 venv."
     echo "Please ensure an appropriate tool (virtualenv or the Python3 venv"
