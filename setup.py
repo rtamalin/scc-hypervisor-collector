@@ -45,7 +45,14 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 # Basic requirements that need to be satisfied to do a pip install
 requirements = [
+    # scc-hypervisor-collector direct dependencies
     "pyyaml",
+
+    # virtual-host-gatherer dependencies
+    "libvirt-python",
+    "pycurl",
+    "pyvmomi",
+    "six",
     "virtual_host_gatherer>=1.0.23",
 ]
 
