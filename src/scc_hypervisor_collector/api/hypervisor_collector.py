@@ -87,6 +87,10 @@ class HypervisorCollector:
         """Return the specified retry count."""
         return self._retries
 
+    def _worker_run(self) -> Optional[Dict]:
+        """Return results or running worker.run()"""
+        return self.backend.worker.run()
+
     def _query_backend(self) -> Dict:
         """Query the specified backend to obtained required data.
 
@@ -104,7 +108,7 @@ class HypervisorCollector:
 
             # results are a dictionary on success or None if an error
             # occurred, such as a connection failure/network timeout
-            results: Optional[Dict] = self.backend.worker.run()
+            results: Optional[Dict] = self._worker_run()
 
             # If we got a valid result for the backend then break out
             # of the retry loop.

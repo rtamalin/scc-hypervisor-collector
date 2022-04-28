@@ -1,0 +1,6 @@
+---
+# Credentials
+credentials:
+  scc:
+    username: "m_scc_username"
+    password: "m_scc_password"

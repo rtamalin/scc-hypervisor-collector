@@ -1,0 +1,24 @@
+---
+
+# Credentials
+credentials:
+  scc:
+    username: "usrm"
+    password: "pwdm"
+
+# Hypervisor Backends
+backends:
+
+  # A VCenter example
+  - id: "vcenterm"
+    hostname: "vcenter1.example.com"
+    port: 443
+    username: "VMware_Account_Username"
+    password: "VMware_Account_Password"
+
+
+  # A Libvirt Hypervisor node
+  - id: "libvirtm"
+    uri: "qemu+ssh:///system"
+    sasl_username: "Libvirt_Account_Username"
+    sasl_password: "Libvirt_Account_Password"

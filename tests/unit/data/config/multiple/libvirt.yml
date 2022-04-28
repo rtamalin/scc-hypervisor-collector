@@ -1,0 +1,8 @@
+---
+# Hypervisor Backends
+backends:
+
+  # A Libvirt Hypervisor node
+  - id: "multiple_Libvirt_1"
+    module: "Libvirt"
+    uri: "qemu+ssh:///system"

@@ -1,0 +1,28 @@
+---
+
+# Credentials
+credentials:
+  scc:
+    username: "scc_username"
+    password: "scc_password"
+
+# Hypervisor Backends
+backends:
+
+  # A VCenter example
+
+  - id: "vcenter1"
+    module: "VMware"
+    hostname: "vcenter.bogustest.net"
+    port: 443
+    username: "Administrator@test.net"
+    password: "test"
+
+
+  # A Libvirt Hypervisor node
+  - id: "libvirt1"
+    module: "Libvirt"
+    uri: "qemu+ssh://vagrant@libvirt.bogustest.net/system"
+    #remove the following entries but for now since it's marked as required, leaving it as is
+    sasl_username: "tux"
+    sasl_password: "tux"

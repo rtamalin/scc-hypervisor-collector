@@ -75,3 +75,5 @@ TBD
 
 ## Configuration Schema
 TBD
+
+[CI](https://github.com/SUSE/scc-hypervisor-collector/actions/workflows/ci-workflow.yml/badge.svg)
