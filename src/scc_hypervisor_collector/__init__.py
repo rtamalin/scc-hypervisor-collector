@@ -14,10 +14,13 @@ the SUSE Customer Center.
 See 'ConfigManager' for details on configuration data setup.
 """
 
-from .api import ConfigManager
+from .api import (ConfigManager, CollectionScheduler)
 
 
 __author = 'Fergal Mc Carthy <fmccarthy@suse.com>'
 __version__ = '0.0.1'
 
-__all__ = ['ConfigManager']
+__all__ = [
+    'ConfigManager',
+    'CollectionScheduler',
+]

@@ -3,14 +3,15 @@ SCC Hypervisor Collect CLI Implementation
 """
 import argparse
 import logging
+from typing import (Optional, Sequence)
+import yaml
 
 from scc_hypervisor_collector import __version__ as cli_version
-from scc_hypervisor_collector import ConfigManager
+from scc_hypervisor_collector import (ConfigManager, CollectionScheduler)
 
 
-def main() -> None:
+def main(argv: Optional[Sequence[str]] = None) -> None:
     """Implements CLI for the scc-hypervisor-gatherer."""
-
     parser = argparse.ArgumentParser(
         description="Collect configured hypervisor details and upload to "
                     "SUSE Customer Center (SCC)."
@@ -38,7 +39,7 @@ def main() -> None:
                         help="Check the configuration data only, "
                              "reporting any errors.")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.quiet:
         log_level = logging.WARN
@@ -53,6 +54,21 @@ def main() -> None:
                             config_dir=args.config_dir)
 
     logging.info("ConfigManager: config_data = %s", repr(cfg_mgr.config_data))
+
+    if args.check:
+        return
+
+    scheduler = CollectionScheduler(cfg_mgr.config_data)
+
+    logging.debug("Scheduler: scheduler = %s", repr(scheduler))
+
+    scheduler.run()
+
+    # TODO(rtamalin): Make reporting the results like this optional
+    # once the SccUploader is implemented.
+    for hv in scheduler.hypervisors:
+        print(f"[{hv.backend.id}]")
+        print(yaml.safe_dump(hv.details))
 
 
 __all__ = ['main']
