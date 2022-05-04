@@ -1,0 +1,88 @@
+{
+    "esx1.test.net": {
+      "cpuArch": "x86_64",
+      "cpuDescription": "Intel(R) Xeon(R) CPU E5-2640 0 @ 2.50GHz",
+      "cpuMhz": 2499.999656,
+      "cpuVendor": "intel",
+      "hostIdentifier": "'vim.HostSystem:host-381'",
+      "name": "esx1.test.net",
+      "optionalVmData": {
+        "test-3": {
+          "vmState": "running"
+        },
+        "test-4": {
+          "vmState": "running"
+        },
+        "test-7": {
+          "vmState": "running"
+        },
+        "test-8": {
+          "vmState": "running"
+        },
+        "test-9": {
+          "vmState": "running"
+        },
+        "sles15sp3template_reg": {
+          "vmState": "stopped"
+        }
+      },
+      "os": "VMware ESXi",
+      "osVersion": "6.5.0",
+      "ramMb": 262109,
+      "totalCpuCores": 12,
+      "totalCpuSockets": 2,
+      "totalCpuThreads": 24,
+      "type": "vmware",
+      "vms": {
+        "test-3": "422266e1-da46-f539-d26a-22daa149f349",
+        "test-4": "42220879-9017-4cd2-cd58-ecdcd5736371",
+        "test-7": "42228c45-491f-cbc4-0c53-83ad898c7de8",
+        "test-8": "4222f957-09ea-b243-cc9d-2329af9b02d7",
+        "test-9": "4222c982-4a5e-5fbe-5ab7-9bfce45a9d83",
+        "sles15sp3template_reg": "42224e1b-f0b3-bd55-39c2-263f3860836f"
+      }
+    },
+    "esx2.test.net": {
+      "cpuArch": "x86_64",
+      "cpuDescription": "Intel(R) Xeon(R) CPU E5-2640 0 @ 2.50GHz",
+      "cpuMhz": 2499.999729,
+      "cpuVendor": "intel",
+      "hostIdentifier": "'vim.HostSystem:host-388'",
+      "name": "esx2.test.net",
+      "optionalVmData": {
+        "test-1": {
+          "vmState": "running"
+        },
+        "test-10": {
+          "vmState": "running"
+        },
+        "test-2": {
+          "vmState": "running"
+        },
+        "test-5": {
+          "vmState": "running"
+        },
+        "test-6": {
+          "vmState": "running"
+        },
+        "sles15sp3template_noreg": {
+          "vmState": "stopped"
+        }
+      },
+      "os": "VMware ESXi",
+      "osVersion": "6.5.0",
+      "ramMb": 262109,
+      "totalCpuCores": 12,
+      "totalCpuSockets": 2,
+      "totalCpuThreads": 24,
+      "type": "vmware",
+      "vms": {
+        "test-1": "422258e0-dda2-1169-328b-0c925c387cd2",
+        "test-10": "4222aa67-0d91-f441-6317-f08e3d77a907",
+        "test-2": "42221e74-de60-3d3e-6549-a29b0b920229",
+        "test-5": "4222a917-b294-9fd5-fce9-a71472cdc7a9",
+        "test-6": "42221af4-3200-190e-5c85-0bcb1a23cb5d",
+        "sles15sp3template_noreg": "4222e9bc-4d4d-1615-ec87-ae81798e2356"
+      }
+    }
+}

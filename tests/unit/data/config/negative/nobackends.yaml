@@ -1,0 +1,11 @@
+---
+
+# Credentials
+credentials:
+  scc:
+    username: "scc_username"
+    password: "scc_password"
+
+backends:
+  - id: 1
+  - id: 2
