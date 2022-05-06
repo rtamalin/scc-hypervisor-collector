@@ -24,7 +24,8 @@ def hypervisor_collector(backendid, config_manager):
     return hypervisor_coll
 
 @pytest.fixture
-def scc_hypervisor_collector_cli():
+def scc_hypervisor_collector_cli(monkeypatch, tmp_path):
+    monkeypatch.setenv("HOME", str(tmp_path))
     return cli
 
 def pytest_configure(config):
