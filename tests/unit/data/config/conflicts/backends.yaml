@@ -1,9 +1,14 @@
 ---
 
-# VMWare Hypervisor Backends
+# Hypervisor Backends
 backends:
 
-  # A duplicate of what's in backends.yaml
+  # A Libvirt Hypervisor node
+  - id: "multiple_Libvirt_1"
+    module: "Libvirt"
+    uri: "qemu+ssh:///system"
+
+  # A VCenter example
   - id: "multiple_VCenter_1"
     module: "VMware"
     hostname: "vcenter2.example.com"

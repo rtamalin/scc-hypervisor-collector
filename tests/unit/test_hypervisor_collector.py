@@ -24,6 +24,7 @@ class TestHypervisorCollector:
         with mock.patch('scc_hypervisor_collector.api.HypervisorCollector._query_backend',
                         return_value=utils.read_mock_data(mfilename)):
             utils.validate_mock_data(hypervisor_collector, backendid)
+            assert hypervisor_collector.collected is True
 
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)

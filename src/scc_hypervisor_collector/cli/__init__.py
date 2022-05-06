@@ -3,6 +3,7 @@ SCC Hypervisor Collect CLI Implementation
 """
 import argparse
 import logging
+import sys
 from typing import (Optional, Sequence)
 import yaml
 
@@ -56,7 +57,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     logging.info("ConfigManager: config_data = %s", repr(cfg_mgr.config_data))
 
     if args.check:
-        return
+        sys.exit(0)
 
     scheduler = CollectionScheduler(cfg_mgr.config_data)
 
