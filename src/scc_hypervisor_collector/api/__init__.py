@@ -6,6 +6,8 @@ This package implements the API for the SCC Hypervisor Collector.
 
 from .exceptions import (
     BackendConfigError,
+    ConfigManagerError,
+    ConflictingBackendsError,
     CollectorException,
     CollectorConfigContentError,
     CollectorConfigurationException,
@@ -27,6 +29,8 @@ from .uploader import SCCUploader
 __all__ = [
     # exceptions
     'BackendConfigError',
+    'ConfigManagerError',
+    'ConflictingBackendsError',
     'CollectorException',
     'CollectorConfigurationException',
     'CollectorConfigContentError',

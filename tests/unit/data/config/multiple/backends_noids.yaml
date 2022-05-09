@@ -1,0 +1,16 @@
+---
+
+# Hypervisor Backends with no ids, duplicating entries
+# found in backends.yaml.
+backends:
+
+  # A Libvirt Hypervisor node
+  - module: "Libvirt"
+    uri: "qemu+ssh:///system"
+
+  # A VCenter example
+  - module: "VMware"
+    hostname: "vcenter2.example.com"
+    port: 443
+    username: "VMware_Account_Username"
+    password: "VMware_Account_Password"

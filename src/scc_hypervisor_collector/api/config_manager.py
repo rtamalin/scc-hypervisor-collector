@@ -8,13 +8,16 @@ operation of the SCC Hypervisor Collector.
 
 import logging
 from pathlib import Path
-from typing import (Dict, List, Optional)
+from typing import (Any, Dict, List, Optional)
 import yaml
 
 from .configuration import CollectorConfig
-from .exceptions import (ConfigManagerError,
-                         EmptyConfigurationError,
-                         NoConfigFilesFoundError)
+from .exceptions import (
+    ConfigManagerError,
+    ConflictingBackendsError,
+    EmptyConfigurationError,
+    NoConfigFilesFoundError,
+)
 
 LOG = logging.getLogger()
 
@@ -106,6 +109,74 @@ class ConfigManager:
 
         return cfg_files
 
+    @staticmethod
+    def _remove_idless_duplicates(backend: Dict[str, Any],
+                                  backends: List[Dict[str, Any]]) -> None:
+        """Remove any id-less matches for backend from backends list."""
+
+        no_id_backend = backend.copy()
+        existing_id = no_id_backend.pop('id')
+        if no_id_backend in backends:
+            LOG.debug('Dropping duplicated id-less backend for matching '
+                      'backend with id %s', repr(existing_id))
+            backends.remove(no_id_backend)
+
+    def _merge_config_data(self, old_cfg: Dict[str, Any],
+                           new_cfg: Dict[str, Any]) -> None:
+        """Merge the new_cfg into the old_cfg.
+
+        Handle merging backend lists appropriately; duplicates
+        should be dropped, and conflicting entries should fail.
+        """
+        backends_in_old: bool = 'backends' in old_cfg
+        backends_in_new: bool = 'backends' in new_cfg
+
+        # Make lightweight copies of backends lists in old and new cfgs
+        old_backends: List[Dict[str, Any]] = old_cfg.get('backends', []).copy()
+        new_backends: List[Dict[str, Any]] = new_cfg.get('backends', []).copy()
+
+        # Merge new config settings over existing config settings
+        old_cfg.update(new_cfg)
+
+        # Unless both configs had a backends entry the result of the
+        # update() is the desired result.
+        if not all((backends_in_old, backends_in_new)):
+            return
+
+        # Check for exact duplicates and remove any found
+        duplicates = [b for b in new_backends if b in old_backends]
+        if duplicates:
+            LOG.debug(
+                "Found %d duplicates: %s", len(duplicates),
+                repr([{'id': b.get('id', 'NO_ID_SPECIFIED'),
+                       'module': b.get('module', 'NO_MODULE_SPECIFIED')}
+                      for b in duplicates])
+            )
+            new_backends = [b for b in new_backends if b not in old_backends]
+
+        # Check for duplicated id-less backends entries, i.e. if there
+        # any entries in either list without an id that match an entry
+        # in the other list with an id. If so retain the one with an id.
+        for backend in old_backends:
+            if 'id' in backend:
+                self._remove_idless_duplicates(backend, new_backends)
+
+        for backend in new_backends:
+            if 'id' in backend:
+                self._remove_idless_duplicates(backend, old_backends)
+
+        # Check for conflicts and fail if any found
+        old_ids = [b['id'] for b in old_backends if 'id' in b]
+        conflicts = [b for b in new_backends if b['id'] in old_ids]
+        if conflicts:
+            LOG.debug("Found %d conflicts for these backend ids %s",
+                      len(conflicts), repr(old_ids))
+            raise ConflictingBackendsError("Conflicting Backend IDs",
+                                           old_ids)
+
+        # Combined lists should now contain unique entries.
+        old_cfg['backends'] = old_backends + new_backends
+
     def _load_config(self) -> Dict:
         """Load the specified config files, if any, merging content
         together.
@@ -113,18 +184,17 @@ class ConfigManager:
             Dict: The (possibly empty) dictionary of config data.
         """
 
-        cfg_data = {}
+        cfg_data: Dict[str, Any] = {}
         for cfg_file in self.config_files:
-            if not cfg_file.exists():
-                LOG.warning("File not found: %s", repr(cfg_file))
-                continue
-
             file_data = yaml.safe_load(cfg_file.read_text(encoding="utf-8"))
 
-            # TODO(rtamalin): Implement a list merge mechanism so that
-            # backend lists are merged together rather than the update's
-            # backend list replacing the existing backend list contents.
-            cfg_data.update(file_data)
+            if file_data is None:
+                LOG.debug("Empty config file: %s", repr(str(cfg_file)))
+                continue
+
+            # Merge new data over existing data, combining any new backends
+            # with existing backends, eliminating duplicates as needed.
+            self._merge_config_data(cfg_data, file_data)
 
         if not cfg_data:
             raise EmptyConfigurationError("No config settings loaded!")

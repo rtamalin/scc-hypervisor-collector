@@ -13,7 +13,13 @@ class TestConfigManager:
         assert config_data.get('credentials')['scc']['password'] == 'default_scc_password'
 
     @pytest.mark.config(None, 'tests/unit/data/config/empty')
-    def test_empty_dir_config_load(self, config_manager):
+    def test_empty_config_load(self, config_manager):
+        with pytest.raises(exceptions.EmptyConfigurationError) as excinfo:
+            config_manager._load_config()
+        assert 'No config settings loaded!' in str(excinfo.value)
+
+    @pytest.mark.config(None, 'tests/unit/data/config/nonexisting')
+    def test_nonexisting_dir_config_load(self, config_manager):
         with pytest.raises(exceptions.NoConfigFilesFoundError) as excinfo:
             config_manager._load_config()
         assert 'No config files found' in str(excinfo.value)
@@ -24,6 +30,12 @@ class TestConfigManager:
             config_manager._load_config()
         assert 'No config files found' in str(excinfo.value)
 
+    @pytest.mark.config(None, 'tests/unit/data/config/conflicts')
+    def test_backend_conflicts_config_load(self, config_manager):
+        with pytest.raises(exceptions.ConflictingBackendsError) as excinfo:
+            config_manager._load_config()
+        assert 'Conflicting Backend IDs' in str(excinfo.value)
+        assert 'multiple_VCenter_1' in excinfo.value.backend_ids
 
     @pytest.mark.config(None, 'tests/unit/data/config/invalid')
     def test_invalid_dir_config_load(self, config_manager):
@@ -32,7 +44,6 @@ class TestConfigManager:
         # hence the yaml file is successfully read
         assert len(config_data) > 0
 
-    @pytest.mark.skip("Skipping because backends from two different files are not merged")
     @pytest.mark.config(None, 'tests/unit/data/config/lexorder')
     def test_lexorder_config_load(self, config_manager):
         config_data = config_manager._load_config()
@@ -92,7 +103,6 @@ class TestConfigManager:
         with pytest.raises(exceptions.CollectorConfigContentError):
             assert "Invalid configuration data provided" in config_manager.config_data
 
-    @pytest.mark.skip("Skip since the behavior for backends is only listing the contents from the last file loaded.")
     @pytest.mark.config(None, 'tests/unit/data/config/multiple')
     def test_dir_config_data(self, config_manager):
         config_data = config_manager.config_data

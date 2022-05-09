@@ -1,8 +1,9 @@
 ---
-# Hypervisor Backends
+
+# Libvirt Hypervisor Backends
 backends:
 
-  # A Libvirt Hypervisor node
+  # A duplicate of what's in backends.yaml
   - id: "multiple_Libvirt_1"
     module: "Libvirt"
     uri: "qemu+ssh:///system"
