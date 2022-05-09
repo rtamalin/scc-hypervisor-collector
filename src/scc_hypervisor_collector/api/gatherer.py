@@ -5,7 +5,6 @@ The VHGather is a wrapper class for managing virtual-host-gatherer
 integration.
 """
 
-from argparse import Namespace
 import logging
 from typing import (Any, cast, Dict, Optional, Sequence)
 
@@ -19,19 +18,7 @@ class VHGatherer:
 
     def __init__(self) -> None:
 
-        # Workaround for limitations in virtual-host-gather v1.0.23
-        # save current logging level
-        loglevel = LOG.level
-
-        self._gatherer: Gatherer = Gatherer(
-            # Workaround for limitations in virtual-host-gather v1.0.23
-            opts=Namespace(logfile='/tmp/test.log')
-        )
-
-        # Workaround for limitations in virtual-host-gather v1.0.23
-        # restore current logging level
-        LOG.setLevel(loglevel)
-
+        self._gatherer: Gatherer = Gatherer()
         self._module_params: Optional[Dict[str, Dict]] = None
 
     @property
