@@ -12,13 +12,6 @@ class TestScheduler:
         with pytest.raises(exceptions.SchedulerInvalidConfigError):
             CollectionScheduler(config=None)
 
-    def test_empty_backends(self):
-        with pytest.raises(exceptions.SchedulerInvalidConfigError):
-            scc_config = SccCredsConfig(username='xyz', password='test')
-            cred_config = CredentialsConfig(scc=scc_config)
-            collector_config = CollectorConfig(credentials=cred_config, backends=[])
-            CollectionScheduler(config=collector_config)
-
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     def test_scheduler(self, config_manager):
         backends = config_manager.config_data.backends

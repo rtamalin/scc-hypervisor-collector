@@ -146,6 +146,11 @@ class TestConfigManager:
         with pytest.raises(AttributeError):
             scc_config.sensitive_fields = new_set_sensitive_fields
 
+    @pytest.mark.config('tests/unit/data/config/negative/emptybackends.yaml', None)
+    def test_empty_backends_section(self, config_manager):
+        with pytest.raises(exceptions.BackendConfigError):
+            config_manager.config_data
+
     @pytest.mark.config('tests/unit/data/config/negative/idlessbackend.yaml', None)
     def test_id_generation(self, config_manager):
         with pytest.raises(exceptions.BackendConfigError):
