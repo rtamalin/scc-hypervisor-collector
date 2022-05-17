@@ -148,11 +148,8 @@ class TestConfigManager:
 
     @pytest.mark.config('tests/unit/data/config/negative/idlessbackend.yaml', None)
     def test_id_generation(self, config_manager):
-        config_data = config_manager.config_data
-        backends = config_data.get('backends')
-        for backend in backends:
-            #assert random uuid generated
-            assert backend['id']
+        with pytest.raises(exceptions.BackendConfigError):
+            config_manager.config_data
 
     @pytest.mark.config('tests/unit/data/config/default/default.yaml', None)
     def test_missing_fields(self, config_manager):

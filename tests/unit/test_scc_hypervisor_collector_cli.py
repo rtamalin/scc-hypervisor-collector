@@ -41,9 +41,7 @@ class TestSCCHypervisorCollectorCLI:
 
     def test_check_option_failure(self, capsys, monkeypatch, scc_hypervisor_collector_cli, caplog):
         monkeypatch.setattr("sys.argv", ["scc-hypervisor-collector", "--check", "--config-dir", "tests/unit/data/config/invalid"])
-        # TODO: switch to checking for SystemExit with non-zero exit status
-        #       once ConfigManager() check mode is implemented.
-        with pytest.raises(exceptions.CollectorConfigContentError):
+        with pytest.raises(SystemExit):
             scc_hypervisor_collector_cli.main()
         #need to add asssertions when logger is accessible
 

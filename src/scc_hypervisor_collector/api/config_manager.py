@@ -45,7 +45,8 @@ class ConfigManager:
     """
 
     def __init__(self, config_file: Optional[str] = None,
-                 config_dir: Optional[str] = None):
+                 config_dir: Optional[str] = None,
+                 check: bool = False):
         """Initialiser for ConfigManager"""
 
         LOG.debug("config_file: %s, config_dir: %s", repr(config_file),
@@ -63,6 +64,8 @@ class ConfigManager:
             # use expanduser() to expand ~'s
             Path(config_dir).expanduser() if config_dir else None
         )
+
+        self._check = check
 
         # Lazy loaded configuration data
         self._config_data: Optional[CollectorConfig] = None
@@ -226,5 +229,6 @@ class ConfigManager:
         """Return the config_data loaded from the specifed config
            sources."""
         if self._config_data is None:
-            self._config_data = CollectorConfig(self._load_config())
+            self._config_data = CollectorConfig(self._load_config(),
+                                                _check=self._check)
         return self._config_data

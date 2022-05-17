@@ -52,11 +52,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     logging.basicConfig(level=log_level)
 
     cfg_mgr = ConfigManager(config_file=args.config,
-                            config_dir=args.config_dir)
+                            config_dir=args.config_dir,
+                            check=args.check)
 
     logging.info("ConfigManager: config_data = %s", repr(cfg_mgr.config_data))
 
     if args.check:
+        for error in cfg_mgr.config_data.config_errors:
+            print(error)
         sys.exit(0)
 
     scheduler = CollectionScheduler(cfg_mgr.config_data)
