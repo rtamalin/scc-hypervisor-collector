@@ -539,7 +539,7 @@ class CollectorConfig(GeneralConfig):
             self._config_errors.append(msg)
             if not self._check:
                 raise error
-
+        self.check_for_backends(combined_args)
         try:
             for i, b in enumerate(combined_args["backends"]):
                 try:
@@ -592,3 +592,12 @@ class CollectorConfig(GeneralConfig):
         """
         # return a lightweight copy of the credentials config
         return CredentialsConfig(self['credentials'])
+
+    def check_for_backends(self, combined_args: Dict) -> None:
+        """ check if the configuration has the backends entry"""
+        if not combined_args.get("backends"):
+            msg = "No backends specified in config!"
+            LOG.error(msg)
+            self._config_errors.append(msg)
+            if not self._check:
+                raise BackendConfigError(msg)

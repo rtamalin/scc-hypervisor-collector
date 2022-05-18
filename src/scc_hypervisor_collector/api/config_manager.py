@@ -124,6 +124,16 @@ class ConfigManager:
                       'backend with id %s', repr(existing_id))
             backends.remove(no_id_backend)
 
+    @staticmethod
+    def _get_backends(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """ Return the list of backends - an empty list if
+        backends section is empty
+        """
+        backends: List[Dict[str, Any]] = cfg.get('backends', [])
+        if backends is None:
+            backends = []
+        return backends.copy()
+
     def _merge_config_data(self, old_cfg: Dict[str, Any],
                            new_cfg: Dict[str, Any]) -> None:
         """Merge the new_cfg into the old_cfg.
@@ -135,8 +145,8 @@ class ConfigManager:
         backends_in_new: bool = 'backends' in new_cfg
 
         # Make lightweight copies of backends lists in old and new cfgs
-        old_backends: List[Dict[str, Any]] = old_cfg.get('backends', []).copy()
-        new_backends: List[Dict[str, Any]] = new_cfg.get('backends', []).copy()
+        old_backends: List[Dict[str, Any]] = self._get_backends(old_cfg)
+        new_backends: List[Dict[str, Any]] = self._get_backends(new_cfg)
 
         # Merge new config settings over existing config settings
         old_cfg.update(new_cfg)

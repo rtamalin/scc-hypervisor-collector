@@ -1,0 +1,6 @@
+---
+backends:
+credentials:
+  scc:
+    username: "asdf"
+    password: "asdf"
