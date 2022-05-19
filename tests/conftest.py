@@ -1,10 +1,20 @@
 import pytest
-import json
-import mock
+import os
 
-from scc_hypervisor_collector.api import ConfigManager, CollectionScheduler, HypervisorCollector
+from scc_hypervisor_collector.api import ConfigManager, HypervisorCollector
 from scc_hypervisor_collector import cli
 
+
+@pytest.fixture(scope="session", autouse=True)
+def data_config_permissions(pytestconfig):
+    config = pytestconfig
+    # Update file permissions of the tests/unit/data folder
+    location = config.rootpath / "tests/unit/data"
+    for root, dirs, files in os.walk(location):
+        for dir in [os.path.join(root, d) for d in dirs]:
+            os.chmod(dir, 0o700)
+        for file in [os.path.join(root, f) for f in files]:
+            os.chmod(file, 0o600)
 
 @pytest.fixture
 def config_manager(request):
@@ -32,5 +42,3 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", ('config: the configuration passed on to config manager')
     )
-
-

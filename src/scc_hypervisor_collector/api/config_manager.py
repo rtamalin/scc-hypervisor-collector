@@ -6,7 +6,9 @@ data and validate that it contains the settings required for correct
 operation of the SCC Hypervisor Collector.
 """
 
+import getpass
 import logging
+import stat
 from pathlib import Path
 from typing import (Any, Dict, List, Optional)
 import yaml
@@ -84,6 +86,8 @@ class ConfigManager:
 
         # Handle config directory first
         if self._config_dir:
+            if self._config_dir.exists():
+                self.check_permission(self._config_dir)
             # Find both *.yml and *.yaml files
             cfg_files.extend(self._config_dir.glob("*.yml"))
             cfg_files.extend(self._config_dir.glob("*.yaml"))
@@ -110,7 +114,30 @@ class ConfigManager:
         LOG.debug("Config Files found: %s",
                   repr([str(f) for f in cfg_files]))
 
+        for file in cfg_files:
+            self.check_permission(file)
+
         return cfg_files
+
+    @staticmethod
+    def check_permission(path: Path) -> None:
+        """Check if path has the required permissions """
+        current_user = getpass.getuser()
+        stats = path.stat()
+        mode = stats.st_mode
+        if path.owner() != current_user:
+            msg = f"{path} not owned by the user {current_user}"
+            raise ConfigManagerError(msg)
+        if path.is_dir():
+            if stat.S_IMODE(mode) != 0o700:
+                msg = f"User { current_user } should have full access to " \
+                      f"{path} but group and others should have no access."
+                raise ConfigManagerError(msg)
+        if path.is_file():
+            if stat.S_IMODE(mode) != 0o600:
+                msg = f"User {current_user} should have read/write access " \
+                      f"to {path} but group and others should have no access."
+                raise ConfigManagerError(msg)
 
     @staticmethod
     def _remove_idless_duplicates(backend: Dict[str, Any],
