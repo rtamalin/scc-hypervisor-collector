@@ -18,7 +18,7 @@ from .api import (ConfigManager, CollectionScheduler)
 
 
 __author = 'Fergal Mc Carthy <fmccarthy@suse.com>'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 __all__ = [
     'ConfigManager',
