@@ -6,4 +6,4 @@ libvirt-python
 pycurl
 pyvmomi
 six
-virtual-host-gatherer @ git+https://github.com/uyuni-project/virtual-host-gatherer.git#egg=virtual-host-gatherer@virtual-host-gatherer-1.0.23-1&subdirectory=virtual-host-gatherer
+virtual-host-gatherer @ git+https://github.com/uyuni-project/virtual-host-gatherer.git#egg=virtual-host-gatherer@main&subdirectory=virtual-host-gatherer
