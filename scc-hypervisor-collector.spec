@@ -72,6 +72,8 @@ install -m 0644 doc/%{name}.1 %{buildroot}%{_mandir}/man1/
 
 %check
 export PYTHONPATH=%{buildroot}%{python_sitelib}
+# ensure example config permissions are correct
+chmod -R g-rwx,o-rwx examples
 %{buildroot}%{_bindir}/%{name} -h
 %{buildroot}%{_bindir}/%{name} --check --config examples/shc_cfg.yaml
 
