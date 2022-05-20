@@ -78,6 +78,14 @@ available for use by `tox`.
 The tool is broken down into a number of component APIs which are implemented as
 subpackages within the main `scc-hypervisor-collector` package.
 
+## `Inputs` - Configuration directory and files
+The config directory and files provided as arguments for the tool has 
+sensitive information that needs to be protected. The tool requires 
+these to be owned by the user running the tool. The permissions on these 
+config files need to be read/write (0600) and the config directory should 
+be user access only (0700) for the user that will run the tool. 
+The tool cannot be run with root privileges. 
+
 ## `ConfigManager` - Configuration Management
 TBD
 

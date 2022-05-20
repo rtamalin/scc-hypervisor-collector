@@ -3,6 +3,7 @@ SCC Hypervisor Collect CLI Implementation
 """
 import argparse
 import logging
+import os
 import sys
 from typing import (Optional, Sequence)
 import yaml
@@ -50,6 +51,10 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         log_level = logging.INFO
 
     logging.basicConfig(level=log_level)
+
+    # Check for privileges - cannot be run as root
+    if os.geteuid() == 0:
+        sys.exit('This tool cannot be run as root!')
 
     cfg_mgr = ConfigManager(config_file=args.config,
                             config_dir=args.config_dir,
