@@ -21,8 +21,6 @@ from .exceptions import (
     NoConfigFilesFoundError,
 )
 
-LOG = logging.getLogger()
-
 
 class ConfigManager:
     """Configuration Management for the scc-hypervisor-collector.
@@ -50,9 +48,10 @@ class ConfigManager:
                  config_dir: Optional[str] = None,
                  check: bool = False):
         """Initialiser for ConfigManager"""
+        self._log = logging.getLogger("config_manager")
 
-        LOG.debug("config_file: %s, config_dir: %s", repr(config_file),
-                  repr(config_dir))
+        self._log.debug("config_file: %s, config_dir: %s", repr(config_file),
+                        repr(config_dir))
 
         if not config_file and not config_dir:
             raise ConfigManagerError("At least one of config_file and "
@@ -95,8 +94,8 @@ class ConfigManager:
             # Lexically sort found files
             cfg_files.sort()
 
-        LOG.debug("Lexically sorted config directory files list: %s",
-                  repr(cfg_files))
+        self._log.debug("Lexically sorted config directory files list: %s",
+                        repr(cfg_files))
 
         # If a config file was specified then append it to the sorted
         # list of found files ensuring it's contents will supercede
@@ -111,8 +110,8 @@ class ConfigManager:
                                           str(self._config_file),
                                           str(self._config_dir))
 
-        LOG.debug("Config Files found: %s",
-                  repr([str(f) for f in cfg_files]))
+        self._log.debug("Config Files found: %s",
+                        repr([str(f) for f in cfg_files]))
 
         for file in cfg_files:
             self.check_permission(file)
@@ -139,16 +138,15 @@ class ConfigManager:
                       f"to {path} but group and others should have no access."
                 raise ConfigManagerError(msg)
 
-    @staticmethod
-    def _remove_idless_duplicates(backend: Dict[str, Any],
+    def _remove_idless_duplicates(self, backend: Dict[str, Any],
                                   backends: List[Dict[str, Any]]) -> None:
         """Remove any id-less matches for backend from backends list."""
 
         no_id_backend = backend.copy()
         existing_id = no_id_backend.pop('id')
         if no_id_backend in backends:
-            LOG.debug('Dropping duplicated id-less backend for matching '
-                      'backend with id %s', repr(existing_id))
+            self._log.debug('Dropping duplicated id-less backend for matching '
+                            'backend with id %s', repr(existing_id))
             backends.remove(no_id_backend)
 
     @staticmethod
@@ -186,7 +184,7 @@ class ConfigManager:
         # Check for exact duplicates and remove any found
         duplicates = [b for b in new_backends if b in old_backends]
         if duplicates:
-            LOG.debug(
+            self._log.debug(
                 "Found %d duplicates: %s", len(duplicates),
                 repr([{'id': b.get('id', 'NO_ID_SPECIFIED'),
                        'module': b.get('module', 'NO_MODULE_SPECIFIED')}
@@ -209,8 +207,8 @@ class ConfigManager:
         old_ids = [b['id'] for b in old_backends if 'id' in b]
         conflicts = [b for b in new_backends if b['id'] in old_ids]
         if conflicts:
-            LOG.debug("Found %d conflicts for these backend ids %s",
-                      len(conflicts), repr(old_ids))
+            self._log.debug("Found %d conflicts for these backend ids %s",
+                            len(conflicts), repr(old_ids))
             raise ConflictingBackendsError("Conflicting Backend IDs",
                                            old_ids)
 
@@ -229,7 +227,7 @@ class ConfigManager:
             file_data = yaml.safe_load(cfg_file.read_text(encoding="utf-8"))
 
             if file_data is None:
-                LOG.debug("Empty config file: %s", repr(str(cfg_file)))
+                self._log.debug("Empty config file: %s", repr(str(cfg_file)))
                 continue
 
             # Merge new data over existing data, combining any new backends
@@ -239,7 +237,7 @@ class ConfigManager:
         if not cfg_data:
             raise EmptyConfigurationError("No config settings loaded!")
 
-        LOG.debug("Config Files processed: %s", repr(self.config_files))
+        self._log.debug("Config Files processed: %s", repr(self.config_files))
         return cfg_data
 
     @property

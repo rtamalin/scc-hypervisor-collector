@@ -5,11 +5,48 @@ import argparse
 import logging
 import os
 import sys
-from typing import (Optional, Sequence)
+from logging.handlers import RotatingFileHandler
+from typing import (Any, Optional, Sequence)
 import yaml
 
 from scc_hypervisor_collector import __version__ as cli_version
 from scc_hypervisor_collector import (ConfigManager, CollectionScheduler)
+from scc_hypervisor_collector.api import (
+    CollectorException
+)
+
+
+class PermissionsRotatingFileHandler(RotatingFileHandler):
+    """ RotatingFileHandler with permissions set"""
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        os.chmod(self.baseFilename, 0o0600)
+
+
+def create_logger(level: str,
+                  logfile: str) -> logging.Logger:
+    """Create a logger for use with the scc-hypervisor-collector """
+    logger = logging.getLogger()
+    logger.setLevel(level)
+
+    if level == 'DEBUG':
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s'
+                                      ' - %(message)s')
+    else:
+        formatter = logging.Formatter('%(levelname)s - %(message)s')
+
+    loghandler: Any = None
+    if logfile:
+        loghandler = PermissionsRotatingFileHandler(logfile,
+                                                    maxBytes=(0x100000 * 5),
+                                                    backupCount=5)
+    else:
+        loghandler = logging.StreamHandler()
+
+    loghandler.setFormatter(formatter)
+    logger.addHandler(loghandler)
+
+    return logger
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
@@ -38,8 +75,14 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                         help="The config directory to check for YAML "
                              "config files.")
     parser.add_argument('-C', '--check', action='store_true',
-                        help="Check the configuration data only, "
-                             "reporting any errors.")
+                        help="Check the configuration data "
+                             "only, reporting any errors.")
+    default_log_destination = f"{os.path.expanduser('~')}/" \
+                              f"scc-hypervisor-collector.log"
+    parser.add_argument('-L', '--logfile', action='store',
+                        default=default_log_destination,
+                        help="path to logfile. "
+                             f"Default: {default_log_destination}")
 
     args = parser.parse_args(argv)
 
@@ -50,7 +93,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     else:
         log_level = logging.INFO
 
-    logging.basicConfig(level=log_level)
+    logger = create_logger(
+        level=logging.getLevelName(log_level), logfile=args.logfile)
 
     # Check for privileges - cannot be run as root
     if os.geteuid() == 0:
@@ -59,19 +103,27 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     cfg_mgr = ConfigManager(config_file=args.config,
                             config_dir=args.config_dir,
                             check=args.check)
-
-    logging.info("ConfigManager: config_data = %s", repr(cfg_mgr.config_data))
+    try:
+        logger.info("ConfigManager: config_data = %s",
+                    repr(cfg_mgr.config_data))
+    except CollectorException as e:
+        logger.error("Error:", exc_info=True)
+        print("Error:", e, file=sys.stderr)
+        sys.exit(1)
 
     if args.check:
         for error in cfg_mgr.config_data.config_errors:
             print(error)
         sys.exit(0)
 
-    scheduler = CollectionScheduler(cfg_mgr.config_data)
-
-    logging.debug("Scheduler: scheduler = %s", repr(scheduler))
-
-    scheduler.run()
+    try:
+        scheduler = CollectionScheduler(cfg_mgr.config_data)
+        logger.debug("Scheduler: scheduler = %s", repr(scheduler))
+        scheduler.run()
+    except CollectorException as e:
+        logger.error("Error:", exc_info=True)
+        print("Error:", e, file=sys.stderr)
+        sys.exit(1)
 
     # TODO(rtamalin): Make reporting the results like this optional
     # once the SccUploader is implemented.
