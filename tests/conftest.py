@@ -1,3 +1,4 @@
+import pathlib
 import pytest
 import os
 
@@ -8,8 +9,14 @@ from scc_hypervisor_collector import cli
 @pytest.fixture(scope="session", autouse=True)
 def data_config_permissions(pytestconfig):
     config = pytestconfig
+    # Get repo root directory, supporting older versions of pytest
+    # that don't have rootpath
+    if hasattr(config, 'rootpath'):
+        reporoot = config.rootpath
+    else:
+        reporoot = pathlib.Path(config.rootdir)
+    location = reporoot / "tests/unit/data"
     # Update file permissions of the tests/unit/data folder
-    location = config.rootpath / "tests/unit/data"
     for root, dirs, files in os.walk(location):
         for dir in [os.path.join(root, d) for d in dirs]:
             os.chmod(dir, 0o700)
