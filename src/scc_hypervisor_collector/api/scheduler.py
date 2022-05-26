@@ -13,8 +13,6 @@ from .configuration import CollectorConfig
 from .exceptions import SchedulerInvalidConfigError
 from .hypervisor_collector import HypervisorCollector
 
-LOG = logging.getLogger()
-
 
 class CollectionScheduler:
     """Collection Scheduler for scc-hypervisor-collector.
@@ -43,8 +41,9 @@ class CollectionScheduler:
 
     def __init__(self, config: CollectorConfig):
         """Schedule collection of details from config specified backends."""
+        self._log = logging.getLogger(__name__)
 
-        LOG.debug("config=%s", repr(config))
+        self._log.debug("config=%s", repr(config))
 
         # sanity check the parameters
         if config is None:
@@ -63,14 +62,14 @@ class CollectionScheduler:
         # determine set of hypervisor types specified in configuration
         self._hypervisor_types: Set[str] = {b.module for b in config.backends}
 
-        LOG.debug("hv_types: %s", repr(self._hypervisor_types))
+        self._log.debug("hv_types: %s", repr(self._hypervisor_types))
 
         # instantiate collectors for each backend
         self._hypervisors: Sequence[HypervisorCollector] = [
             HypervisorCollector(b) for b in config.backends
         ]
 
-        LOG.debug("hvs: %s", repr(self._hypervisors))
+        self._log.debug("hvs: %s", repr(self._hypervisors))
 
         # group collectors by hypervisor type
         self._hypervisor_groups: Dict[str, Sequence[HypervisorCollector]] = {
@@ -78,7 +77,7 @@ class CollectionScheduler:
             for t in self._hypervisor_types
         }
 
-        LOG.debug("hv_groups: %s", repr(self._hypervisor_groups))
+        self._log.debug("hv_groups: %s", repr(self._hypervisor_groups))
 
     def _run_hv_type_queries(self, hv_type: str) -> None:
         """Query backends for each configured hypervisor of given type."""

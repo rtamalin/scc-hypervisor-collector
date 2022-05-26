@@ -25,8 +25,6 @@ from .exceptions import (
     HypervisorCollectorRetriesExhausted
 )
 
-LOG = logging.getLogger()
-
 
 class HypervisorCollector:
     """Hypervisor Collector for scc-hypervisor-collector
@@ -64,8 +62,9 @@ class HypervisorCollector:
 
     def __init__(self, backend: BackendConfig, retries: int = 3):
         """Initialiser for HypervisorCollector"""
+        self._log = logging.getLogger(__name__)
 
-        LOG.debug("backend=%s, retries=%d", repr(backend), retries)
+        self._log.debug("backend=%s, retries=%d", repr(backend), retries)
 
         # save the parameters
         self._backend: BackendConfig = backend
@@ -115,11 +114,14 @@ class HypervisorCollector:
             if results is not None:
                 break
 
-            LOG.debug("Backend %s, module %s, attempt %d failed",
-                      repr(self.backend.id), repr(self.backend.module),
-                      attempt)
+            self._log.debug("Backend %s, module %s, attempt %d failed",
+                            repr(self.backend.id), repr(self.backend.module),
+                            attempt)
 
         else:
+            self._log.error("Backend %s, module %s, query failed after "
+                            "%d attempts", repr(self.backend.id),
+                            repr(self.backend.module), attempt)
             # retry count exhausted without successfully retrieving any
             # results for specified backend.
             raise HypervisorCollectorRetriesExhausted(
@@ -129,8 +131,9 @@ class HypervisorCollector:
                 self.retries,
             )
 
-        LOG.debug("Backend %s, module %s, query succeeded after %d attempts",
-                  repr(self.backend.id), repr(self.backend.module), attempt)
+        self._log.debug("Backend %s, module %s, query succeeded after "
+                        "%d attempts", repr(self.backend.id),
+                        repr(self.backend.module), attempt)
 
         return results
 

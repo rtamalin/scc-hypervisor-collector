@@ -125,7 +125,7 @@ class HypervisorCollectorRetriesExhausted(HypervisorCollectorException):
     @property
     def retries(self) -> Any:
         """Retrieves the retries argument."""
-        return self._get_arg(2)
+        return self._get_arg(3)
 
     def __str__(self) -> str:
         return (

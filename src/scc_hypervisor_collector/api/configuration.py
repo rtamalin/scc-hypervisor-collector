@@ -17,8 +17,6 @@ from typing import (Any, ClassVar, Dict, Iterator, List, Optional, Set)
 from .gatherer import VHGatherer
 from .exceptions import (BackendConfigError, CollectorConfigContentError)
 
-LOG = logging.getLogger()
-
 
 # Configuration Data Helper/Wrapper Classes
 class GeneralConfig(MutableMapping):
@@ -88,6 +86,8 @@ class GeneralConfig(MutableMapping):
 
         self._children: List = kwargs.pop('_children', [])
 
+        self._log = logging.getLogger(__name__ + '.GeneralConfig')
+
         try:
             # Update the internal config storage with remaining kwargs fields
             self.update(dict(*args, **kwargs))
@@ -98,7 +98,7 @@ class GeneralConfig(MutableMapping):
         # Validate content
         if not self.valid:
             msg = f"Invalid configuration data provided: {self!r}"
-            LOG.error(msg)
+            self._log.error(msg)
             if not self._check:
                 raise CollectorConfigContentError(msg)
 
@@ -169,6 +169,11 @@ class GeneralConfig(MutableMapping):
     def children(self) -> List[str]:
         """Return the list of children"""
         return self._children.copy()
+
+    @property
+    def logger(self) -> logging.Logger:
+        """Return the list of children"""
+        return self._log
 
     def _sanitized_config(self) -> Dict:
         cfg = dict(self._config)
@@ -264,6 +269,7 @@ class BackendConfig(GeneralConfig):
         self._gatherer: VHGatherer = VHGatherer()
         self._check = kwargs.pop('_check', False)
         self._config_errors = []
+        self._log = logging.getLogger(__name__ + '.BackendConfig')
 
         # Create a dict from the provided arguments
         combined_args = dict(*args, **kwargs)
@@ -272,7 +278,7 @@ class BackendConfig(GeneralConfig):
         backend_id = combined_args.get('id', None)
         if backend_id is None:
             msg = "Invalid backend - missing required field: id"
-            LOG.error(msg)
+            self._log.error(msg)
             raise BackendConfigError(msg)
 
         # Retrieve the module specified in the arguments, if any
@@ -280,18 +286,19 @@ class BackendConfig(GeneralConfig):
         if module is None:
             msg = f"Invalid backend {combined_args['id']!r} - " \
                   f"missing required field: module"
-            LOG.error(msg)
+            self._log.error(msg)
             raise BackendConfigError(msg)
 
         # Lookup the worker module entry in the gatherer modules
         self._worker: Optional[Any] = self._gatherer.get_worker(module)
-        LOG.debug("module %s -> worker %s", repr(module), repr(self._worker))
+        self._log.debug("module %s -> worker %s", repr(module),
+                        repr(self._worker))
         if self._worker is None:
             supported_modules = self._gatherer.module_names
             msg = f"Invalid backend {combined_args['id']!r} - " \
                   f"module {module!r} is not one of the supported modules: " \
                   f"{supported_modules!r}"
-            LOG.error(msg)
+            self._log.error(msg)
             raise BackendConfigError(msg)
 
         self._worker_params: Dict = self._gatherer.get_module_params(module)
@@ -311,15 +318,15 @@ class BackendConfig(GeneralConfig):
                          _config_errors=self._config_errors,
                          _children=[],
                          **combined_args)
-        LOG.debug("Required fields: %s", repr(self.required_fields))
-        LOG.debug("Sensitive fields: %s", repr(self.sensitive_fields))
-        LOG.debug("Missing fields: %s", repr(self.missing_fields))
+        self._log.debug("Required fields: %s", repr(self.required_fields))
+        self._log.debug("Sensitive fields: %s", repr(self.sensitive_fields))
+        self._log.debug("Missing fields: %s", repr(self.missing_fields))
 
         if not self.valid:
             msg = f"Invalid backend {combined_args['id']!r} " \
                   f"- missing required field: {self.missing_fields!r}"
             self._config_errors.append(msg)
-            LOG.error(msg)
+            self._log.error(msg)
             if not self._check:
                 raise BackendConfigError(msg)
 
@@ -375,6 +382,7 @@ class SccCredsConfig(GeneralConfig):
         self._module: Optional[Any] = None
         self._check = kwargs.pop('_check', False)
         self._config_errors = []
+        self._log = logging.getLogger(__name__ + '.SccCredsConfig')
 
         required: Set[str] = set((
             "username",
@@ -397,7 +405,7 @@ class SccCredsConfig(GeneralConfig):
                 msg = msg + \
                       f" - missing required fields: {self.missing_fields!r}"
             self._config_errors.append(msg)
-            LOG.error(msg)
+            self._log.error(msg)
             if not self._check:
                 raise CollectorConfigContentError(msg)
 
@@ -433,6 +441,7 @@ class CredentialsConfig(GeneralConfig):
         self._check = kwargs.pop('_check', False)
         self._config_errors = []
         self._children = []
+        self._log = logging.getLogger(__name__ + '.CredentialsConfig')
 
         required: Set[str] = set((
             "scc",
@@ -447,7 +456,7 @@ class CredentialsConfig(GeneralConfig):
         except TypeError:
             msg = "Missing scc section in credentials"
             self._config_errors.append(msg)
-            LOG.error(msg)
+            self._log.error(msg)
             combined_args["scc"] = {}
 
         # Ensure the SCC credentials are managed by a SCCCredsConfig object
@@ -510,6 +519,7 @@ class CollectorConfig(GeneralConfig):
         self._check = kwargs.pop('_check', False)
         self._config_errors = []
         self._children = []
+        self._log = logging.getLogger(__name__ + '.CollectorConfig')
 
         required: Set[str] = set((
             "backends",
@@ -535,7 +545,7 @@ class CollectorConfig(GeneralConfig):
                 msg = f"Missing {error} section"
             else:
                 msg = f"{error}"
-            LOG.error(msg)
+            self._log.error(msg)
             self._config_errors.append(msg)
             if not self._check:
                 raise error
@@ -556,13 +566,13 @@ class CollectorConfig(GeneralConfig):
         except KeyError as error:
             msg = f"Missing {error} section"
             self._config_errors.append(msg)
-            LOG.error(msg)
+            self._log.error(msg)
             if not self._check:
                 raise error
         except TypeError as error:
             msg = "Invalid backends section"
             self._config_errors.append(msg)
-            LOG.error(msg)
+            self._log.error(msg)
             if not self._check:
                 raise TypeError(msg) from error
 
@@ -597,7 +607,7 @@ class CollectorConfig(GeneralConfig):
         """ check if the configuration has the backends entry"""
         if not combined_args.get("backends"):
             msg = "No backends specified in config!"
-            LOG.error(msg)
+            self._log.error(msg)
             self._config_errors.append(msg)
             if not self._check:
                 raise BackendConfigError(msg)

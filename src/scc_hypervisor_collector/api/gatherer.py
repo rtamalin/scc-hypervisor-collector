@@ -5,12 +5,9 @@ The VHGather is a wrapper class for managing virtual-host-gatherer
 integration.
 """
 
-import logging
 from typing import (Any, cast, Dict, Optional, Sequence)
 
 from gatherer.gatherer import Gatherer
-
-LOG = logging.getLogger()
 
 
 class VHGatherer:

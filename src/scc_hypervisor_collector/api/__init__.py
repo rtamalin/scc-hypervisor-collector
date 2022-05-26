@@ -7,16 +7,19 @@ This package implements the API for the SCC Hypervisor Collector.
 from .exceptions import (
     BackendConfigError,
     ConfigManagerError,
+    ConfigManagerException,
     ConflictingBackendsError,
     CollectorException,
     CollectorConfigContentError,
     CollectorConfigurationException,
     CollectionSchedulerException,
+    EmptyConfigurationError,
     HypervisorCollectorException,
     HypervisorCollectorRetriesExhausted,
     GathererException,
     NoConfigFilesFoundError,
     SCCUploaderException,
+    SchedulerInvalidConfigError
 )
 from .config_manager import ConfigManager
 from .configuration import (BackendConfig, CollectorConfig, CredentialsConfig,
@@ -35,11 +38,14 @@ __all__ = [
     'CollectorConfigurationException',
     'CollectorConfigContentError',
     'CollectionSchedulerException',
+    'ConfigManagerException',
+    'EmptyConfigurationError',
     'HypervisorCollectorException',
     'HypervisorCollectorRetriesExhausted',
     'GathererException',
     'NoConfigFilesFoundError',
     'SCCUploaderException',
+    'SchedulerInvalidConfigError',
 
     # config_manager
     'ConfigManager',
