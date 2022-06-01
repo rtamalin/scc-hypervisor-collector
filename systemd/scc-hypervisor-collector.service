@@ -1,0 +1,11 @@
+[Unit]
+Description=run scc-hypervisor-collector if valid config defined
+Documentation=man:scc-hypervisor-collector(1) man:scc-hypervisor-collector.service(8)
+
+[Service]
+Type=oneshot
+RemainAfterExit=false
+User=scchvc
+Group=scchvc
+ExecStart=scc-hypervisor-collector
+ExecCondition=scc-hypervisor-collector --check

@@ -27,6 +27,7 @@ from setuptools import find_packages, setup
 
 here = pathlib.Path(__file__).parent.resolve()
 
+
 # Get the version from the toplevel package __init__.py
 def get_version(pkg_path, version_file="__init__.py",
                 version_attr="__version__"):
@@ -35,6 +36,7 @@ def get_version(pkg_path, version_file="__init__.py",
         if line.startswith(version_attr):
             quote = "'" if "'" in line else '"'
             return line.split(quote)[1]
+
 
 pkg_name = "scc-hypervisor-collector"
 pkg_imp_name = pkg_name.replace('-', '_')
@@ -93,7 +95,8 @@ tox_requirements = [
 setup(
     name=pkg_name,
     version=pkg_version,
-    description="Collect hypervisor details for upload to SUSE Customer Center.",
+    description=("Collect hypervisor details for upload to "
+                 "SUSE Customer Center."),
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/SUSE/scc-hypervisor-collector',
@@ -135,6 +138,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     project_urls={
-        "Bug Tracker": "https://github.com/SUSE/scc-hypervisor-collector/issues",
+        "Bug Tracker":
+            "https://github.com/SUSE/scc-hypervisor-collector/issues",
     },
 )
