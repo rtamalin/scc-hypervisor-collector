@@ -16,6 +16,7 @@
 #
 
 
+%define shcuser scchvc
 %define _not_yet 0
 %define skip_python2 1
 %global __python %{_bindir}/python3
@@ -25,24 +26,24 @@
 %{?!python_install:%define python_install %{expand:%py3_install}}
 
 Name:           scc-hypervisor-collector
-Version:        0.0.0~git0.a1b2c3d
+Version:        0.0.2~git18.e27f17d
 Release:        0
-Summary:        Collects/Uploads hypervisor details to SUSE Customer Care
+Summary:        Regularly collect and upload hypervisor details to SUSE Customer Care
 License:        Apache-2.0
 Group:          System/Management
 URL:            https://github.com/SUSE/scc-hypervisor-collector
 Source0:        scc-hypervisor-collector-%{version}.tar.xz
+Source1:        scc-hypervisor-collector.service
+Source2:        scc-hypervisor-collector.timer
 BuildRequires:  %{python_module PyYAML}
 BuildRequires:  %{python_module devel}
+BuildRequires:  %{python_module mock}
+BuildRequires:  %{python_module pytest}
 BuildRequires:  fdupes
 BuildRequires:  python-rpm-macros
-BuildRequires:  %{python_module pytest}
-BuildRequires:  %{python_module mock}
 BuildRequires:  virtual-host-gatherer-Libvirt
 BuildRequires:  virtual-host-gatherer-VMware
-Requires:       %{python_module PyYAML}
-Requires:       virtual-host-gatherer-Libvirt
-Requires:       virtual-host-gatherer-VMware
+Requires:       %{name}-common
 BuildArch:      noarch
 %if 0%{_not_yet}
 BuildRequires:  asciidoc
@@ -52,6 +53,17 @@ BuildRequires:  %{python_module setuptools}
 %endif
 
 %description
+This package contains the systemd timer and service scripts that will
+run the scc-hypervisor-collector on a regular basis.
+
+%package common
+Summary:        Tool to collect and upload hypervisor details to SUSE Customer Care
+Group:          System/Management
+Requires:       %{python_module PyYAML}
+Requires:       virtual-host-gatherer-Libvirt
+Requires:       virtual-host-gatherer-VMware
+
+%description common
 This package contains a script to gather information about virtual
 machines running on various hypervisors & VM management solutions.
 
@@ -70,6 +82,12 @@ mkdir -p %{buildroot}%{_mandir}/man1
 install -m 0644 doc/%{name}.1 %{buildroot}%{_mandir}/man1/
 %endif
 
+# install service related components
+install -p -D -m 644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
+install -p -D -m 644 %{SOURCE2} %{buildroot}%{_unitdir}/%{name}.timer
+mkdir -p %{buildroot}%{_sbindir}
+ln -s %{_sbindir}/service %{buildroot}%{_sbindir}/rc%{name}
+
 %fdupes %{buildroot}%{python_sitelib}
 
 %check
@@ -83,7 +101,33 @@ chmod -R g-rwx,o-rwx examples
 # run tests
 pytest -vv
 
+%pre
+getent group %{shcuser} >/dev/null || groupadd -r %{shcuser}
+getent passwd %{shcuser} >/dev/null || useradd -r -g %{shcuser} \
+  -d %{_localstatedir}/lib/%{shcuser} \
+  -s /sbin/nologin \
+  -c "user for %{name}" %{shcuser}
+%service_add_pre %{name}.service
+%service_add_pre %{name}.timer
+
+%post
+%service_add_post %{name}.service
+%service_add_post %{name}.timer
+
+%preun
+%service_del_preun %{name}.timer
+%service_del_preun %{name}.service
+
+%postun
+%service_del_postun %{name}.timer
+%service_del_postun %{name}.service
+
 %files
+%{_sbindir}/rc%{name}
+%{_unitdir}/%{name}.service
+%{_unitdir}/%{name}.timer
+
+%files common
 %{_bindir}/%{name}
 %license LICENSE
 %doc README.md
