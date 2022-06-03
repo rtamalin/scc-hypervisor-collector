@@ -5,6 +5,7 @@ import argparse
 import logging
 import os
 import sys
+import traceback
 from logging.handlers import RotatingFileHandler
 from typing import (Any, Optional, Sequence)
 import yaml
@@ -33,9 +34,18 @@ def create_logger(level: str,
     formatter = logging.Formatter(fmt_str)
     loghandler: Any = None
     if logfile:
-        loghandler = PermissionsRotatingFileHandler(logfile,
-                                                    maxBytes=(0x100000 * 5),
-                                                    backupCount=5)
+        try:
+            loghandler = PermissionsRotatingFileHandler(
+                    logfile,
+                    maxBytes=(0x100000 * 5),
+                    backupCount=5)
+        except OSError as error:
+            loghandler = logging.StreamHandler()
+            if level != 'DEBUG':
+                formatter = logging.Formatter('%(levelname)s - %(message)s')
+                print("Error:", error, file=sys.stderr)
+            else:
+                traceback.print_exc()
     else:
         loghandler = logging.StreamHandler()
         if level != 'DEBUG':
@@ -45,6 +55,18 @@ def create_logger(level: str,
     logger.addHandler(loghandler)
 
     return logger
+
+
+def printlog(log_level: int, error: Exception, logger: logging.Logger) -> None:
+    """ Print log message """
+    if isinstance(logger.handlers[0], PermissionsRotatingFileHandler):
+        print("ERROR:", error, file=sys.stderr)
+        logger.error("ERROR:", exc_info=True)
+    else:
+        if log_level != logging.DEBUG:
+            print("ERROR:", error, file=sys.stderr)
+        else:
+            logger.error("ERROR:", exc_info=True)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
@@ -101,12 +123,12 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     cfg_mgr = ConfigManager(config_file=args.config,
                             config_dir=args.config_dir,
                             check=args.check)
+
     try:
         logger.info("ConfigManager: config_data = %s",
                     repr(cfg_mgr.config_data))
     except CollectorException as e:
-        logger.error("Error:", exc_info=True)
-        print("Error:", e, file=sys.stderr)
+        printlog(log_level, e, logger)
         sys.exit(1)
 
     if args.check:
@@ -119,8 +141,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         logger.debug("Scheduler: scheduler = %s", repr(scheduler))
         scheduler.run()
     except CollectorException as e:
-        logger.error("Error:", exc_info=True)
-        print("Error:", e, file=sys.stderr)
+        printlog(log_level, e, logger)
         sys.exit(1)
 
     # TODO(rtamalin): Make reporting the results like this optional
