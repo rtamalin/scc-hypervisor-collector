@@ -29,12 +29,8 @@ def create_logger(level: str,
     logger = logging.getLogger()
     logger.setLevel(level)
 
-    if level == 'DEBUG':
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s'
-                                      ' - %(message)s')
-    else:
-        formatter = logging.Formatter('%(levelname)s - %(message)s')
-
+    fmt_str = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(fmt_str)
     loghandler: Any = None
     if logfile:
         loghandler = PermissionsRotatingFileHandler(logfile,
@@ -42,6 +38,8 @@ def create_logger(level: str,
                                                     backupCount=5)
     else:
         loghandler = logging.StreamHandler()
+        if level != 'DEBUG':
+            formatter = logging.Formatter('%(levelname)s - %(message)s')
 
     loghandler.setFormatter(formatter)
     logger.addHandler(loghandler)
