@@ -267,3 +267,8 @@ class ConfigManager:
             self._config_data = CollectorConfig(self._load_config(),
                                                 _check=self._check)
         return self._config_data
+
+    @property
+    def log(self) -> logging.Logger:
+        """Return the Logger object"""
+        return self._log

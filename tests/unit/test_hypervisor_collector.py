@@ -1,3 +1,4 @@
+import logging
 import mock
 import pytest
 
@@ -56,6 +57,29 @@ class TestHypervisorCollector:
             assert 'module' in str(excinfo.value)
             assert 'retries' in str(excinfo.value)
 
+    @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
+    @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
+    @pytest.mark.parametrize('log_level', ['DEBUG', 'INFO', 'WARN'], indirect=True)
+    def test_sensitive_fields_success(self, hypervisor_collector_with_log, backendid):
+        mfilename = 'tests/unit/data/config/mock/mock_' + backendid + '.json'
+        with mock.patch('scc_hypervisor_collector.api.HypervisorCollector._worker_run',
+                        side_effect=[utils.read_mock_data(mfilename)]):
+            utils.validate_mock_data(hypervisor_collector_with_log[0], backendid)
+        assert "3tjdla3gEP4WqkPd" not in hypervisor_collector_with_log[1]
+
+
+    @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
+    @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
+    @pytest.mark.parametrize('log_level', ['DEBUG', 'INFO', 'WARN'], indirect=True)
+    def test_sensitive_fields_failure(self, hypervisor_collector_with_log, backendid):
+        with mock.patch('scc_hypervisor_collector.api.HypervisorCollector._worker_run',
+                        return_value=None):
+            with pytest.raises(exceptions.HypervisorCollectorRetriesExhausted) as excinfo:
+                hypervisor_collector_with_log[0].results
+            assert 'Backend' in str(excinfo.value)
+            assert 'module' in str(excinfo.value)
+            assert 'retries' in str(excinfo.value)
+            assert "3tjdla3gEP4WqkPd" not in hypervisor_collector_with_log[1]
 
 @pytest.fixture
 def retries(request):
@@ -67,3 +91,21 @@ def hypervisor_collector_with_retries(backendid, retries, config_manager):
     filtered_list = [b for b in config_data.backends if b.id == backendid]
     hypervisor_coll = HypervisorCollector(backend=filtered_list[0], retries=retries)
     return hypervisor_coll
+
+
+@pytest.fixture
+def log_level(request):
+    return request.param
+
+@pytest.fixture
+def hypervisor_collector_with_log(backendid, log_level, config_manager, caplog):
+    if log_level == "DEBUG":
+        config_manager.log.parent.setLevel(logging.DEBUG)
+    elif log_level == "WARN":
+        config_manager.log.parent.setLevel(logging.WARN)
+    else:
+        config_manager.log.parent.setLevel(logging.INFO)
+    config_data = config_manager.config_data
+    filtered_list = [b for b in config_data.backends if b.id == backendid]
+    hypervisor_coll = HypervisorCollector(backend=filtered_list[0])
+    return (hypervisor_coll, caplog.text)

@@ -16,13 +16,12 @@ backends:
     hostname: "vcenter.bogustest.net"
     port: 443
     username: "Administrator@test.net"
-    password: "test"
+    password: "3tjdla3gEP4WqkPd"
 
 
   # A Libvirt Hypervisor node
   - id: "libvirt1"
     module: "Libvirt"
     uri: "qemu+ssh://vagrant@libvirt.bogustest.net/system"
-    #remove the following entries but for now since it's marked as required, leaving it as is
     sasl_username: "tux"
-    sasl_password: "tux"
+    sasl_password: "3tjdla3gEP4WqkPd"
