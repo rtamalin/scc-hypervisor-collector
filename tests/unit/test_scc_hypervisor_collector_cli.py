@@ -1,6 +1,7 @@
+import mock
 import pytest
 
-from scc_hypervisor_collector.api import exceptions
+from tests import utils
 
 class TestSCCHypervisorCollectorCLI:
     """Class for scc-hypervisor-collector cli tests"""
@@ -59,3 +60,15 @@ class TestSCCHypervisorCollectorCLI:
             scc_hypervisor_collector_cli.main()
         assert caplog.records[0].levelname == 'DEBUG'
         assert caplog.records[-1].levelname == 'ERROR' and 'query failed after 3 attempts' in caplog.text
+
+    def test_verbose_sensitive_field(self, capsys, monkeypatch, scc_hypervisor_collector_cli, caplog):
+        monkeypatch.setattr("sys.argv", ["scc-hypervisor-collector", "--verbose", "--config", "tests/unit/data/config/mock/config.yaml"])
+        with pytest.raises(SystemExit):
+            scc_hypervisor_collector_cli.main()
+        assert "3tjdla3gEP4WqkPd" not in caplog.text
+
+    def test_sensitive_field(self, capsys, monkeypatch, scc_hypervisor_collector_cli, caplog):
+        monkeypatch.setattr("sys.argv", ["scc-hypervisor-collector","--config", "tests/unit/data/config/mock/config.yaml"])
+        with pytest.raises(SystemExit):
+            scc_hypervisor_collector_cli.main()
+        assert "3tjdla3gEP4WqkPd" not in caplog.text
