@@ -60,6 +60,7 @@ run the scc-hypervisor-collector on a regular basis.
 Summary:        Tool to collect and upload hypervisor details to SUSE Customer Care
 Group:          System/Management
 Requires:       %{python_module PyYAML}
+Requires:       openssh-clients
 Requires:       virtual-host-gatherer-Libvirt
 Requires:       virtual-host-gatherer-VMware
 
