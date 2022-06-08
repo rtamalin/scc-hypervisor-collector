@@ -74,6 +74,15 @@ tox driven testing. You will still need to install the relevant versions of
 the Python interpreter using `pyenv install <version>` for them to actually be
 available for use by `tox`.
 
+# Packaging Support
+
+An [RPM spec file](scc-hypervisor-collector.spec) is provided which is ready
+to be used by the openSUSE Build Service (OBS).
+
+Additionally a [Dockerfile](container/Dockerfile) (suitable for building a
+container image in OBS) and an accompanying [entrypoint script](container/entrypoint.bash)
+are provided in the [container directory](container).
+
 # The scc-hypervisor-collector design
 The tool is broken down into a number of component APIs which are implemented as
 subpackages within the main `scc-hypervisor-collector` package.

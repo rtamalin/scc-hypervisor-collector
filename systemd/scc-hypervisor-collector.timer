@@ -3,8 +3,7 @@ Description=update SCC daily with collecter hypervisor details
 Documentation=man:scc-hypervisor-collector(1) man:scc-hypervisor-collector.service(8)
 
 [Timer]
-OnBootSec=15m
-OnUnitActiveSec=1d
+OnCalendar=daily
 RandomizedDelaySec=15m
 
 [Install]
