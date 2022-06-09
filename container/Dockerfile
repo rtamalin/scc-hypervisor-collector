@@ -1,9 +1,6 @@
 #!BuildTag: suse/scc-hypervisor-collector:15.3
 FROM suse/sle15:15.3
 
-#USER wwwrun
-#WORKDIR /srv/www
-
 # Put additional files into container
 COPY entrypoint.bash /root/
 RUN chmod 700 /root/entrypoint.bash
