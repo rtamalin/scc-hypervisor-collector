@@ -48,14 +48,11 @@ class TestHypervisorCollector:
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
     @pytest.mark.parametrize('retries', [4], indirect=True)
-    def test_hypervisor_collector_exhausted_retries(self, hypervisor_collector_with_retries, retries, backendid):
+    def test_hypervisor_collector_exhausted_retries(self, hypervisor_collector_with_retries, retries, backendid, caplog):
         with mock.patch('scc_hypervisor_collector.api.HypervisorCollector._worker_run',
                         side_effect=[None, None, None, None]): #4 retries failure
-            with pytest.raises(exceptions.HypervisorCollectorRetriesExhausted) as excinfo:
-                hypervisor_collector_with_retries.results
-            assert 'Backend' in str(excinfo.value)
-            assert 'module' in str(excinfo.value)
-            assert 'retries' in str(excinfo.value)
+            assert hypervisor_collector_with_retries.results == {}
+            assert 'query failed after 4 attempts' in caplog.text
 
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
@@ -71,14 +68,11 @@ class TestHypervisorCollector:
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
     @pytest.mark.parametrize('log_level', ['DEBUG', 'INFO', 'WARN'], indirect=True)
-    def test_sensitive_fields_failure(self, hypervisor_collector_with_log, backendid):
+    def test_sensitive_fields_failure(self, hypervisor_collector_with_log, backendid, caplog):
         with mock.patch('scc_hypervisor_collector.api.HypervisorCollector._worker_run',
                         return_value=None):
-            with pytest.raises(exceptions.HypervisorCollectorRetriesExhausted) as excinfo:
-                hypervisor_collector_with_log[0].results
-            assert 'Backend' in str(excinfo.value)
-            assert 'module' in str(excinfo.value)
-            assert 'retries' in str(excinfo.value)
+            hypervisor_collector_with_log[0].results
+            assert 'query failed after 3 attempts' in caplog.text
             assert "3tjdla3gEP4WqkPd" not in hypervisor_collector_with_log[1]
 
 @pytest.fixture
