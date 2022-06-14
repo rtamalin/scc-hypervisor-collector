@@ -1,6 +1,6 @@
 [Unit]
 Description=run scc-hypervisor-collector if valid config defined
-Documentation=man:scc-hypervisor-collector(1) man:scc-hypervisor-collector.service(8)
+Documentation=man:scc-hypervisor-collector(1) man:scc-hypervisor-collector(5) man:scc-hypervisor-collector.service(8)
 
 [Service]
 Type=oneshot

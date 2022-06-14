@@ -17,7 +17,6 @@
 
 
 %define shcuser scchvc
-%define _not_yet 0
 %define skip_python2 1
 %global __python %{_bindir}/python3
 
@@ -40,14 +39,13 @@ BuildRequires:  %{python_module devel}
 BuildRequires:  %{python_module mock}
 BuildRequires:  %{python_module pytest}
 BuildRequires:  fdupes
+BuildRequires:  make
+BuildRequires:  pandoc
 BuildRequires:  python-rpm-macros
 BuildRequires:  virtual-host-gatherer-Libvirt
 BuildRequires:  virtual-host-gatherer-VMware
 Requires:       %{name}-common
 BuildArch:      noarch
-%if 0%{_not_yet}
-BuildRequires:  asciidoc
-%endif
 %if 0%{?suse_version} < 1530
 BuildRequires:  %{python_module setuptools}
 %endif
@@ -77,11 +75,13 @@ machines running on various hypervisors & VM management solutions.
 %install
 %python_install
 
-%if 0%{_not_yet}
-a2x -v -d manpage -f manpage doc/%{name}.1.asciidoc
+make -C doc/man all
 mkdir -p %{buildroot}%{_mandir}/man1
-install -m 0644 doc/%{name}.1 %{buildroot}%{_mandir}/man1/
-%endif
+install -m 0644 doc/man/%{name}.1 %{buildroot}%{_mandir}/man1/
+mkdir -p %{buildroot}%{_mandir}/man5
+install -m 0644 doc/man/%{name}.5 %{buildroot}%{_mandir}/man5/
+mkdir -p %{buildroot}%{_mandir}/man8
+install -m 0644 doc/man/%{name}.service.8 %{buildroot}%{_mandir}/man8/
 
 # install service related components
 install -p -D -m 644 %{SOURCE1} %{buildroot}%{_unitdir}/%{name}.service
@@ -128,13 +128,16 @@ getent passwd %{shcuser} >/dev/null || useradd -r -g %{shcuser} \
 %{_unitdir}/%{name}.service
 %{_unitdir}/%{name}.timer
 
+%{_mandir}/man8/*
+
 %files common
 %{_bindir}/%{name}
+
 %license LICENSE
 %doc README.md
-%if 0%{_not_yet}
-%{_mandir}/man1/%{name}.1%{?ext_man}
-%endif
+%{_mandir}/man1/*
+%{_mandir}/man5/*
+
 %dir %{python_sitelib}/scc_hypervisor_collector
 %{python_sitelib}/scc_hypervisor_collector/*.py*
 %dir %{python_sitelib}/scc_hypervisor_collector/api
