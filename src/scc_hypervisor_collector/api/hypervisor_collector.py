@@ -21,9 +21,6 @@ import logging
 from typing import (cast, Dict, Optional, Sequence)
 
 from .configuration import BackendConfig
-from .exceptions import (
-    HypervisorCollectorRetriesExhausted
-)
 
 
 class HypervisorCollector:
@@ -33,7 +30,7 @@ class HypervisorCollector:
     using the virtual-host-gatherer to perform the query.
 
     Arguments:
-        backend (BackendConfigh): the backend config to be managed
+        backend (BackendConfig): the backend config to be managed
             by this HypervisorCollector instance.
 
         retries (int, default 3): the max number of retries to be
@@ -76,6 +73,8 @@ class HypervisorCollector:
         self._results: Optional[Dict] = None
         self._details: Optional[Dict] = None
 
+        self._status = 'pending'
+
     @property
     def backend(self) -> BackendConfig:
         """Return the associated backend config."""
@@ -112,6 +111,7 @@ class HypervisorCollector:
             # If we got a valid result for the backend then break out
             # of the retry loop.
             if results is not None:
+                self._status = 'success'
                 break
 
             self._log.debug("Backend %s, module %s, attempt %d failed",
@@ -119,27 +119,21 @@ class HypervisorCollector:
                             attempt)
 
         else:
+            self._status = 'failure'
+            results = {}
             self._log.error("Backend %s, module %s, query failed after "
                             "%d attempts", repr(self.backend.id),
                             repr(self.backend.module), attempt)
-            # retry count exhausted without successfully retrieving any
-            # results for specified backend.
-            raise HypervisorCollectorRetriesExhausted(
-                "Failed to retrieve any data after exhausing all retries",
-                self.backend.id,
-                self.backend.module,
-                self.retries,
-            )
-
-        self._log.debug("Backend %s, module %s, query succeeded after "
-                        "%d attempts", repr(self.backend.id),
-                        repr(self.backend.module), attempt)
+        if self.succeeded:
+            self._log.debug("Backend %s, module %s, query succeeded after "
+                            "%d attempts", repr(self.backend.id),
+                            repr(self.backend.module), attempt)
 
         return results
 
     def run(self) -> None:
         """Run the backend query if not already run."""
-        if self._results is None:
+        if self._results is None and self.pending:
             # Run the backend query
             self._results = self._query_backend()
 
@@ -192,3 +186,18 @@ class HypervisorCollector:
             }
 
         return cast(Dict, self._details)
+
+    @property
+    def pending(self) -> bool:
+        """Return True if the backend status is pending"""
+        return self._status == "pending"
+
+    @property
+    def succeeded(self) -> bool:
+        """Return True if the backend status is success"""
+        return self._status == "success"
+
+    @property
+    def failed(self) -> bool:
+        """Return True if the backend status is failure"""
+        return self._status == "failure"
