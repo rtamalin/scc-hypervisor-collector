@@ -190,20 +190,14 @@ class HypervisorCollector:
     @property
     def pending(self) -> bool:
         """Return True if the backend status is pending"""
-        if self._status == "pending":
-            return True
-        return False
+        return self._status == "pending"
 
     @property
     def succeeded(self) -> bool:
         """Return True if the backend status is success"""
-        if self._status == "success":
-            return True
-        return False
+        return self._status == "success"
 
     @property
     def failed(self) -> bool:
         """Return True if the backend status is failure"""
-        if self._status == "failure":
-            return True
-        return False
+        return self._status == "failure"
