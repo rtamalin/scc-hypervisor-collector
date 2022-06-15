@@ -15,7 +15,7 @@ to SUSE Customer Center
 # DESCRIPTION
 
 The **scc-hypervisor-collector** collects details that are relevant
-to SUSE Customer Center (SCC) subscription compliance tracking, from
+to SUSE Customer Center (SCC) subscription compliance tracking from
 the specified hypervisors.
 
 The collected details include the total system RAM, CPU architecture
@@ -65,13 +65,19 @@ restricted service account with no special privileges, and will
 exit immediately if it detects that it is running with superuser
 privileges.
 
-## CONFIGURATION SETTINGS PERMISSIONS
+## CONFIGURATION SETTINGS & LOG FILE PERMISSIONS
 As the **scc-hypervisor-collector(5)** configuration settings
 will contain sensitive information such as passwords, the command
 requires that all specified configuration files and directories
 must be owned by the non-root user that is running the command,
 with restrictive permissions allowing only that user to access
 those files.
+
+Similarly, while every effort has been taken to ensure that no
+sensitive data is being written to the log files, to limit
+potential exposure of such information the log files must also
+be owned by, and only accessible by, the user that is running
+the **scc-hypervisor-collector(5)** command.
 
 ## TLS/SSL CERTIFICATES
 
@@ -170,18 +176,25 @@ more details on how to manually configure proxy usage.
 
 **~/.config/scc-hypervisor-collector/**
 : Default configuration directory containing YAML configuration files,
-  merged together in lexical sort order.
+  merged together in lexical sort order. Directory and files must be
+  owned by, and only accessible by, the user running the
+  **scc-hypervisor-collector(5)** command.
 
 **~/scc-hypervisor-collector.log**
 : Default log file which will be automatically rotated and compressed
-  if it gets too large.
+  if it gets too large. Log files must be owned by, and only accessible
+  by, the user running the **scc-hypervisor-collector(5)** command.
+  Will be created with appropriate permissions if no log file exists.
 
 **/var/lib/scchvc/.config/scc-hypervisor-collector/**
 : Configuration directory that the **scc-hypervisor-collector.service(8)**
-  checks for configuration settings.
+  checks for configuration settings. Directory and files must be owned
+  by, and only accessible by, the **scchvc** user.
 
 **/var/lib/scchvc/scc-hypervisor-collector.log**
 : The log file used by the **scc-hypervisor-collector.service(8)**.
+  Log files must be owned by, and only accessible by, the **scchvc** user.
+  Will be created with appropriate permissions if no log file exists.
   
 # AUTHORS
 
