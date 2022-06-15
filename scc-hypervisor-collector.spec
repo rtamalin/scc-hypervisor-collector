@@ -39,8 +39,6 @@ BuildRequires:  %{python_module devel}
 BuildRequires:  %{python_module mock}
 BuildRequires:  %{python_module pytest}
 BuildRequires:  fdupes
-BuildRequires:  make
-BuildRequires:  pandoc
 BuildRequires:  python-rpm-macros
 BuildRequires:  virtual-host-gatherer-Libvirt
 BuildRequires:  virtual-host-gatherer-VMware
@@ -75,7 +73,6 @@ machines running on various hypervisors & VM management solutions.
 %install
 %python_install
 
-make -C doc/man all
 mkdir -p %{buildroot}%{_mandir}/man1
 install -m 0644 doc/man/%{name}.1 %{buildroot}%{_mandir}/man1/
 mkdir -p %{buildroot}%{_mandir}/man5
