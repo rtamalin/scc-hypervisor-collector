@@ -30,10 +30,12 @@ class TestScheduler:
                 hypervisor_coll_list.append(hypervisor_collector)
         with mock.patch('scc_hypervisor_collector.api.CollectionScheduler.hypervisors', tuple(hypervisor_coll_list)):
             scheduler = CollectionScheduler(config_manager.config_data)
-            assert len(scheduler.config.backends) == 2
+            assert len(scheduler.config.backends) == 3
             assert len(scheduler.config.credentials) == 1
             assert len(scheduler.hypervisor_types) == 2
-            #assert len(scheduler.hypervisor_groups) == 2
+            assert len(scheduler.hypervisor_groups) == 2
+            assert len(scheduler.hypervisor_groups['Libvirt']) == 2
+            assert len(scheduler.hypervisor_groups['VMware']) == 1
             assert scheduler.hypervisors == tuple(hypervisor_coll_list)
             for each in scheduler.hypervisors:
                 utils.validate_mock_data(each, each.backend.id)

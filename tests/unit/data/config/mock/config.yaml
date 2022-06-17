@@ -25,3 +25,8 @@ backends:
     uri: "qemu+ssh://vagrant@libvirt.bogustest.net/system"
     sasl_username: "tux"
     sasl_password: "3tjdla3gEP4WqkPd"
+
+  # A Libvirt Hypervisor node
+  - id: "libvirt2"
+    module: "Libvirt"
+    uri: "qemu+ssh://vagrant@libvirt2.bogustest.net/system"

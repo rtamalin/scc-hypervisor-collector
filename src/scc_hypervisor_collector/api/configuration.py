@@ -172,7 +172,7 @@ class GeneralConfig(MutableMapping):
 
     @property
     def logger(self) -> logging.Logger:
-        """Return the list of children"""
+        """Return the logger object"""
         return self._log
 
     def _sanitized_config(self) -> Dict:
