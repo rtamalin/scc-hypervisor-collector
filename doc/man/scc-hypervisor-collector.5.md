@@ -16,11 +16,20 @@ settings that specify the hypervisors that it needs to query and the
 credientials that it will use to upload the collected details to the
 SUSE Customer Center.
 
-# DEFAULT CONFIGURATION FILES
+# CONFIGURATION FILES
 
-By default the **scc-hypervisor-collector(1)** will look for it's
+By default the **scc-hypervisor-collector(1)** will check for
 configuration files in the **~/.config/scc-hypervisor-collector**
 directory of the non-root user account that is running the command.
+
+Only YAML files, with a **.yaml** or **.yml** suffix, will be processed,
+and sub-directories will not be traversed.
+
+The **--config-dir** option can be used to specify a different directory,
+and the **--config** option can be used to specify an explicit config
+file. If both options are specified then the specified config file
+contents will be merged over any settings loaded from the specfied
+configuration directory.
 
 # ACCESS AND OWNERSHIP
 
@@ -114,18 +123,18 @@ development and testing has been on **qemu** (QEMU/KVM) Libvirt
 hypervisor nodes:
 
 **qemu+ssh**
-  : This connection type requires that you have setup an appropriate
-    SSH key that permits passwordless SSH connection to the target
-    system, and that the target account has the required privileges
-    to be able to query the relevant details using read-only type
-    requests.
+: This connection type requires that you have setup appropriate
+  SSH keys (**ssh-keygen(1)**) that permit passwordless SSH
+  connection to the target systems, and that the target user
+  account has the required privileges to be able to query the
+  relevant details using read-only type requests.
 
 **qemu+tls**
-  : This connection type requires that you have setup x509 client
-    and server certs appropriately on both the target hypervisor
-    host and the system on which **scc-hypervisor-collector** will
-    be running. See the Virtualization Guide for your SUSE Linux
-    Enterprise Server release for more details.
+: This connection type requires that you have setup x509 client
+  and server certs appropriately on both the target hypervisor
+  host and the system on which **scc-hypervisor-collector** will
+  be running. See the Virtualization Guide for your SUSE Linux
+  Enterprise Server release for more details.
 
 # EXAMPLE CONFIGURATION
 
@@ -167,4 +176,5 @@ YAML Specification: https://yaml.org/
 
 # SEE ALSO
 
-**scc-hypervisor-collector(1)**, **virtual-host-gatherer(1)**.
+**scc-hypervisor-collector(1)**, **virtual-host-gatherer(1)**, **ssh(1),
+**ssh-keygen(1)**

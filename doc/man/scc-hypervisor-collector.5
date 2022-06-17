@@ -12,12 +12,22 @@ The \f[B]scc-hypervisor-collector(1)\f[R] tool depends upon
 configuration settings that specify the hypervisors that it needs to
 query and the credientials that it will use to upload the collected
 details to the SUSE Customer Center.
-.SH DEFAULT CONFIGURATION FILES
+.SH CONFIGURATION FILES
 .PP
-By default the \f[B]scc-hypervisor-collector(1)\f[R] will look for
-it\[aq]s configuration files in the
+By default the \f[B]scc-hypervisor-collector(1)\f[R] will check for
+configuration files in the
 \f[B]\[ti]/.config/scc-hypervisor-collector\f[R] directory of the
 non-root user account that is running the command.
+.PP
+Only YAML files, with a \f[B].yaml\f[R] or \f[B].yml\f[R] suffix, will
+be processed, and sub-directories will not be traversed.
+.PP
+The \f[B]--config-dir\f[R] option can be used to specify a different
+directory, and the \f[B]--config\f[R] option can be used to specify an
+explicit config file.
+If both options are specified then the specified config file contents
+will be merged over any settings loaded from the specfied configuration
+directory.
 .SH ACCESS AND OWNERSHIP
 .PP
 For security reasons only the non-root user that is running the
@@ -107,10 +117,11 @@ development and testing has been on \f[B]qemu\f[R] (QEMU/KVM) Libvirt
 hypervisor nodes:
 .TP
 \f[B]qemu+ssh\f[R]
-This connection type requires that you have setup an appropriate SSH key
-that permits passwordless SSH connection to the target system, and that
-the target account has the required privileges to be able to query the
-relevant details using read-only type requests.
+This connection type requires that you have setup appropriate SSH keys
+(\f[B]ssh-keygen(1)\f[R]) that permit passwordless SSH connection to the
+target systems, and that the target user account has the required
+privileges to be able to query the relevant details using read-only type
+requests.
 .TP
 \f[B]qemu+tls\f[R]
 This connection type requires that you have setup x509 client and server
@@ -161,4 +172,4 @@ YAML Specification: https://yaml.org/
 .SH SEE ALSO
 .PP
 \f[B]scc-hypervisor-collector(1)\f[R],
-\f[B]virtual-host-gatherer(1)\f[R].
+\f[B]virtual-host-gatherer(1)\f[R], \f[B]ssh(1), \f[R]ssh-keygen(1)**

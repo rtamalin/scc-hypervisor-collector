@@ -12,7 +12,8 @@ The `scc-hypervisor-collector` primarily depends on:
 * [uyuni/virtual-host-gatherer](https://github.com/uyuni/virtual-host-gatherer) >= 1.0.23
 * [pyyaml](https://pypi.org/project/PyYAML/) >= 6.0
 
-Additionally the man pages generation process depends on:
+Additionally the man pages generation process depends on the following tools
+being available:
 * [pandoc](https://hackage.haskell.org/package/pandoc)
 
 # Contributing

@@ -105,6 +105,11 @@ getent passwd %{shcuser} >/dev/null || useradd -r -g %{shcuser} \
   -d %{_localstatedir}/lib/%{shcuser} \
   -s /sbin/nologin \
   -c "user for %{name}" %{shcuser}
+if [ ! -d %{_localstatedir}/lib/%{shcuser} ]; then
+  mkdir -m 700 %{_localstatedir}/lib/%{shcuser}
+  chown %{shcuser}:%{shcuser} %{_localstatedir}/lib/%{shcuser}
+fi
+
 %service_add_pre %{name}.service
 %service_add_pre %{name}.timer
 

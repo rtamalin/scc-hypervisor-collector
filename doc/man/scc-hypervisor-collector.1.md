@@ -14,28 +14,155 @@ to SUSE Customer Center
 
 # DESCRIPTION
 
-The **scc-hypervisor-collector** collects details that are relevant
-to SUSE Customer Center (SCC) subscription compliance tracking from
-the specified hypervisors.
+The **scc-hypervisor-collector(1)** collects details relevant to
+subscription compliance tracking from customer hypervisor solutions
+and uploads them to the SUSE Customer Center (SCC), using provided
+customer credentials.
 
-The collected details include the total system RAM, CPU architecture
-and topology of the hypervisor nodes themselves, as well as the UUIDs
-and state (running or shutoff) for the hosted VMs.
+# COLLECTED DETAILS
 
-## HYPERVISOR DETAILS RETRIEVAL
+For each hypervisor node that is managed by the specified hypervisors,
+the following details are collected:
 
-The **gatherer** Python module provided by the **virtual-host-gatherer(1)**
-command is used to retrieve the details from the configured hypervisors.
+**Hypervisor Node Name**
+: The name assigned to the hypervisor node
+
+**Hypervisor Node ID**
+: The id assigned to the hypervisor node
+
+**Hypervisor Type**
+: The id assigned to the hypervisor node
+
+**RAM**
+: Total system memory
+
+**CPU Architecture**
+: The type of CPU, e.g. **x86_64**, **aarch64**
+
+**CPU Topology**
+: The number of sockets, cores and threads
+
+**Hosted VMs**
+: List of hosted VM with identification and state info.
+
+For each hosted VM the following details are collected:
+
+**Name**
+: The hypervisor configuration name for to the VM
+
+**UUID**
+: The UUID associated with the VM if has been registered with the SCC.
+  In some cases (VMWare, see below) it may be a mangled form of the
+  origial UUID assigned by the hypervisor node.
+
+**VMWare UUID** (VMWare Hypervisors only)
+: The UUID that VMWare assigned to the VM.
+  Depending on the VMWare hypervisor host software version, the VM
+  BIOS version used, and the Linux distribution/release being run,
+  in some cases the system UUID reported within the running instance
+  may reverse the byte order within each of the first 3 elements of
+  the UUID.
+
+**VM State**
+: The state of the VM, i.e. running or stopped/shutoff.
+
+## EXAMPLES OF COLLECTED DETAILS
+
+The following examples are YAML representations of the details that
+are collected from a QEMU/KVM Libvirt host and a VMWare vCenter:
+
+```
+[libvirt1]
+kvmhost1.example.com:
+  capabilities:
+    cpu_topology:
+      arch: x86_64
+      cores: 8
+      sockets: 2
+      threads: 1
+    ram_mb: 128781
+    type: QEMU
+  id: af78bfa8-67df-4d84-8d32-e40eb2404ac1
+  name: sle15-dev
+  vms:
+    some-workload-vm-1:
+      uuid: c44bae94-bab0-44f5-8603-0d770344facc
+      vmState: running
+    some-workload-vm-2:
+      uuid: f5319c28-377f-46fe-acee-5509a356f652
+      vmState: running
+    some-workload-vm-3:
+      uuid: 51b62ad3-effd-45db-b508-1ac47a528b93
+      vmState: running
+    some-workload-vm-4:
+      uuid: cf46f104-5806-4ddd-9e99-32d167d063a3
+      vmState: running
+
+[vcenter1]
+esx1.dc1-vcenter.example.com:
+  capabilities:
+    cpu_topology:
+      arch: x86_64
+      cores: 12
+      sockets: 2
+      threads: 24
+    ram_mb: 253917
+    type: vmware
+  id: '''vim.HostSystem:host-15'''
+  name: esx1.dc1-vcenter.example.com
+  vms:
+    some-workload-vm-1:
+      uuid: 422270db-f382-4955-8cbd-75736a64089b
+      vmState: running
+      vmware_uuid: 422270db-f382-4955-8cbd-75736a64089b
+    another-workload-vm-2:
+      uuid: 4222dec1-6226-4f44-95e4-05156ea0f4b5
+      vmState: running
+      vmware_uuid: 4222dec1-6226-4f44-95e4-05156ea0f4b5
+esx2.dc1-vcenter.example.com:
+  capabilities:
+    cpu_topology:
+      arch: x86_64
+      cores: 12
+      sockets: 2
+      threads: 24
+    ram_mb: 262109
+    type: vmware
+  id: '''vim.HostSystem:host-27'''
+  name: esx2.dc1-vcenter.example.com
+  vms:
+    another-workload-vm-1:
+      uuid: 42225602-4139-44fb-b111-e5b8df028b1c
+      vmState: running
+      vmware_uuid: 42225602-4139-44fb-b111-e5b8df028b1c
+    linux-workload-vm-3:
+      uuid: 5dec2242-969f-1dee-8137-209da409ec2b
+      vmState: running
+      vmware_uuid: 4222ec5d-9f96-ee1d-8137-209da409ec2b
+    linux-workload-vm-1:
+      uuid: 564d2049-beb3-8f38-bfea-488d2a4186cd
+      vmState: running
+      vmware_uuid: 564d2049-beb3-8f38-bfea-488d2a4186cd
+    linux-workload-vm-2:
+      uuid: 7e0f2242-f1c3-dd4a-b902-18f602165074
+      vmState: running
+      vmware_uuid: 42220f7e-c3f1-4add-b902-18f602165074
+```
 
 # OPTIONS
 
   **-c**, **--config <CONFIG_FILE>**
-  : Specifies a YAML file containing configuration settings.
+  : Specifies a file containing YAML configuration settings. If both
+    **--config** and **-config-dir** options are specified, the
+    specified **--config** file contents will be merged over the
+    settings loaded from the **-config-dir** directory, superceding
+    any existing settings.
 
-  **--config_dir**, **--config-dir <CONFIG_DIR>**
-  : Specifies a directory containing YAML configuration files that
-    will be merged together, in lexical sort order, to construct the
-    configuration settings.
+  **--config-dir**, **--config_dir <CONFIG_DIR>**
+  : Specifies a directory containing one of more YAML configuration
+    files, with **.yaml** or **.yml** suffixes that will be merged
+    together, in lexical sort order, to construct the configuration
+    settings. Note that sub-directories will not be traversed.
     Defaults to **~/.config/scc-hypervisor-collector**.
 
   **-C**, **--check**
@@ -65,7 +192,15 @@ restricted service account with no special privileges, and will
 exit immediately if it detects that it is running with superuser
 privileges.
 
+## HYPERVISOR ACCESS CREDENTIALS
+
+Any hypervisor access credentials that are provided for use with
+the **scc-hypervisor-collector(1)** should have minimal privileges
+sufficent to allow retrieving the required details about the
+hypervisor nodes and then VMs running on them.
+
 ## CONFIGURATION SETTINGS & LOG FILE PERMISSIONS
+
 As the **scc-hypervisor-collector(5)** configuration settings
 will contain sensitive information such as passwords, the command
 requires that all specified configuration files and directories
@@ -81,50 +216,58 @@ the **scc-hypervisor-collector(5)** command.
 
 ## TLS/SSL CERTIFICATES
 
-The **virtual-host-gatherer(1)** framework doesn't currently
-permit the specification of certs that can be used to validate
-connections to the specified hypervisors.
+The **virtual-host-gatherer(1)** framework only supports certs
+that are registered with the system certificate stores.
+See **update-ca-certificates(8)** for details.
 
-As such any certs that may be needed to securely connect to the
-specified hypervisors will need to be registered with the system
-certificate stores. See **update-ca-certificates(8)** for details.
+## SSH KEYS
 
-# SYSTEMD INTEGRATION
+For any **Libvirt** hypervisors that are specified with a **qemu+ssh**
+type URI, appropriate SSH keys that support passwordless SSH access
+to the target hypervisor node, must be available in the **~/.ssh/**
+directory.
 
-The **scc-hypervisor-collector** package, when installed, automatically
-creates the **scchvc** restricted service account, if it doesn't already
-exist, with a home directory of **/var/lib/scchvc**.
-
-Additionally two **systemd(1)** units are also installed:
-
-* **scc-hypervisor-collector.service(8)** runs the **scc-hypervisor-collector**
-  as the **scchvc** user if a valid configuration has been specified in
-  the **scchvc** user account.
-
-* **scc-hypervisor-collector.timer(8)** triggers the
-  **scc-hypervisor-collector.service(8)** unit to be run on a daily
-  basis by default.
+See **ssh-keygen(1)** for more details on how to generate appropriate
+SSH keys if needed, and **ssh(1)** for the appropriate permissions
+for the **~/.ssh/** directory and any keys stored there.
 
 # CONFIGURATION SETTINGS
 
 Configuration settings are specified in YAML format and must contain:
 
-* a list of hypervisor **backends** from which to retrieve relevant
+**backends**
+: a list of hypervisor backends from which to retrieve relevant
   details
-* a collection of **credentials** that will be used to upload the
+
+**credentials**
+: a collection of credentials that will be used to upload the
   collected details to the SUSE Customer Center.
 
 See **scc-hypervisor-collector(5)** for details about the possible
 configuration settings.
 
 ## CONFIGURATION MANAGEMENT
-The configuration settings can be specified in a single YAML file,
-or as a set of YAML files whose content will be merged together in
-lexical sort order.
 
-The latter scheme allows the configuration settings to be split up
-into multiple files, e.g. credentials can be specified in one file,
-and the hypervisor backends in one or more files.
+The configuration settings, which must be in YAML format, can be
+specified as:
+
+* a single config file via the **--config** option.
+* a directory containing a set of YAML files (with **.yaml** or
+  **.yml** suffixes) via the **-config-dir** option.
+
+If a configuration directory is specified then any YAML files found
+under that directory, not traversing sub-directories, with **.yaml**
+or **.yml** suffixes, will be processed in lexical sort order,
+merging their contents together.
+
+If a configuration file was specified, it's contents will be processed
+last and merged over any existing configuration settings.
+
+This scheme allows for configuration settings to be split up into
+multiple files, e.g. credentials can be specified in one file,
+and the hypervisor backends in one or more files. Additionally
+specific config settings can be overriden by an explicitly
+specified config file.
 
 When splitting the hypervisor backend details among multiple files,
 the **backends** lists in each file will be merged together to form
@@ -132,11 +275,13 @@ a single combined list; exact duplicates will be ignored but partial
 duplicates will result in errors.
 
 ## ACCESS AND OWNERSHIP
+
 For security reasons only the non-root user that is running the
 **scc-hypervisor-collector** command should be able to access the
 specified configuration files.
 
 ## CONFIGURATION VALIDATION
+
 The **--check** option can be utilised to check if the specified
 configuration settings are valid, or will report any errors that
 it detected.
@@ -156,15 +301,23 @@ settings are documented in **scc-hypervisor-collector(5)**.
 
 **scc-hypervisor-collector** sets the following exit codes:
 
-* 0:  Run completed successfully, or configuration settings
+**0**
+:  Run completed successfully, or configuration settings
       are valid if check mode (**--check**) was specified.
-* 1:  An error occurred.
+
+**1**
+:  An error occurred.
 
 # IMPLEMENTATION
 
 **scc-hypervisor-collector(1)** is implemented in Python.
 It communicates with the SUSE Customer Center via a RESTful
 JSON API over HTTP using TLS encryption.
+
+## HYPERVISOR DETAILS RETRIEVAL
+
+The **gatherer** Python module provided by the **virtual-host-gatherer(1)**
+command is used to retrieve the details from the configured hypervisors.
 
 # ENVIRONMENT
 
@@ -186,16 +339,10 @@ more details on how to manually configure proxy usage.
   by, the user running the **scc-hypervisor-collector(5)** command.
   Will be created with appropriate permissions if no log file exists.
 
-**/var/lib/scchvc/.config/scc-hypervisor-collector/**
-: Configuration directory that the **scc-hypervisor-collector.service(8)**
-  checks for configuration settings. Directory and files must be owned
-  by, and only accessible by, the **scchvc** user.
+**~/.ssh/** (optional)
+: Directory holding any SSH keys (**ssh-keygen**) needed to access
+  **Libvirt** with **qemu+ssh** URIs.
 
-**/var/lib/scchvc/scc-hypervisor-collector.log**
-: The log file used by the **scc-hypervisor-collector.service(8)**.
-  Log files must be owned by, and only accessible by, the **scchvc** user.
-  Will be created with appropriate permissions if no log file exists.
-  
 # AUTHORS
 
 Originally developed by Fergal Mc Carthy (fmccarthy@suse.com) and
