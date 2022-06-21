@@ -12,6 +12,10 @@ def validate_mock_data(hypervisorcollector, backend_id):
         assert 'sle15-dev' in hypervisorcollector.hosts
         assert 'sle15-dev' in hypervisorcollector.details
         assert 'sle15-dev' in hypervisorcollector.results
+    if backend_id == 'libvirt2':
+        assert 'sle15-dev-2' in hypervisorcollector.hosts
+        assert 'sle15-dev-2' in hypervisorcollector.details
+        assert 'sle15-dev-2' in hypervisorcollector.results
     if backend_id == 'vcenter1':
         assert 'esx1.test.net' in hypervisorcollector.hosts
         assert 'esx1.test.net' in hypervisorcollector.details

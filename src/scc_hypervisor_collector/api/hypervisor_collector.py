@@ -45,9 +45,6 @@ class HypervisorCollector:
         backend (BackendConfig): the backend specified as argument
             when the HypervisorCollector was instantiated.
 
-        collected (bool): indicates whether the results have been
-            collected yet.
-
         results (Dict): the results from querying the specified
             backend using the virtual-host-gatherer.
 
@@ -55,6 +52,13 @@ class HypervisorCollector:
             can be found in the results.
 
         details (Dict): summary details extracted from the results.
+
+        pending (bool): indicates if the collection of results still pending
+
+        succeeded (bool): indicates if the results have been successfully
+            collected
+
+        failed (bool): indicates if the results collection had a failure
     """
 
     def __init__(self, backend: BackendConfig, retries: int = 3):
@@ -136,11 +140,6 @@ class HypervisorCollector:
         if self._results is None and self.pending:
             # Run the backend query
             self._results = self._query_backend()
-
-    @property
-    def collected(self) -> bool:
-        """Indicates if results have been collected yet or not."""
-        return self._results is not None
 
     @property
     def results(self) -> Dict:

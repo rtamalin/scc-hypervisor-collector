@@ -103,39 +103,6 @@ class HypervisorCollectorException(CollectorException):
     """Base exception class for hypervisor_collector exceptions."""
 
 
-class HypervisorCollectorRetriesExhausted(HypervisorCollectorException):
-    """Repeated gather backend module queries failed to retrieve results.
-
-    Additional Arguments:
-        id (str): the id of the backend for which retries failed.
-        module (str): the backend module type
-        retries (int): the number of retry attempts.
-    """
-
-    @property
-    def backend_id(self) -> Any:
-        """Retrieves the backend_id argument."""
-        return self._get_arg(1)
-
-    @property
-    def modules(self) -> Any:
-        """Retrieves the module argument."""
-        return self._get_arg(2)
-
-    @property
-    def retries(self) -> Any:
-        """Retrieves the retries argument."""
-        return self._get_arg(3)
-
-    def __str__(self) -> str:
-        return (
-            f"{self.message}: "
-            f"Backend id={self.backend_id!r}, "
-            f"module={self.modules!r}, "
-            f"retries={self.retries!r}"
-        )
-
-
 # scheduler errors
 class CollectionSchedulerException(CollectorException):
     """Base exception class for scheduler exceptions."""

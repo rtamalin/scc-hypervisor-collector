@@ -7,5 +7,3 @@ credentials:
     password: "scc_password"
 
 backends:
-  - id: 1
-  - id: 2

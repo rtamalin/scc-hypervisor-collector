@@ -12,7 +12,6 @@ class TestHypervisorCollector:
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
     def test_hypervisor_collector_results(self, hypervisor_collector, backendid):
-        hypervisor_collector = hypervisor_collector
         mfilename = 'tests/unit/data/config/mock/mock_' + backendid + '.json'
         with mock.patch('scc_hypervisor_collector.api.HypervisorCollector.results', utils.read_mock_data(mfilename)):
             utils.validate_mock_data(hypervisor_collector, backendid)
@@ -20,12 +19,11 @@ class TestHypervisorCollector:
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
     def test_hypervisor_collector_query_backend(self, hypervisor_collector, backendid):
-        hypervisor_collector = hypervisor_collector
         mfilename = 'tests/unit/data/config/mock/mock_' + backendid + '.json'
+        assert hypervisor_collector.pending
         with mock.patch('scc_hypervisor_collector.api.HypervisorCollector._query_backend',
                         return_value=utils.read_mock_data(mfilename)):
             utils.validate_mock_data(hypervisor_collector, backendid)
-            assert hypervisor_collector.collected is True
 
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
@@ -34,6 +32,7 @@ class TestHypervisorCollector:
         with mock.patch('scc_hypervisor_collector.api.HypervisorCollector._worker_run',
                         side_effect=[None, None, utils.read_mock_data(mfilename)]): #3rd retry success
             utils.validate_mock_data(hypervisor_collector, backendid)
+            assert hypervisor_collector.succeeded
 
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
@@ -44,6 +43,7 @@ class TestHypervisorCollector:
                         side_effect=[None, utils.read_mock_data(mfilename)]): #2nd retry success
             assert retries == hypervisor_collector_with_retries.retries
             utils.validate_mock_data(hypervisor_collector_with_retries, backendid)
+            assert hypervisor_collector_with_retries.succeeded
 
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
@@ -53,6 +53,7 @@ class TestHypervisorCollector:
                         side_effect=[None, None, None, None]): #4 retries failure
             assert hypervisor_collector_with_retries.results == {}
             assert 'query failed after 4 attempts' in caplog.text
+            assert hypervisor_collector_with_retries.failed
 
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
@@ -63,7 +64,6 @@ class TestHypervisorCollector:
                         side_effect=[utils.read_mock_data(mfilename)]):
             utils.validate_mock_data(hypervisor_collector_with_log[0], backendid)
         assert "3tjdla3gEP4WqkPd" not in hypervisor_collector_with_log[1]
-
 
     @pytest.mark.config('tests/unit/data/config/mock/config.yaml', None)
     @pytest.mark.parametrize('backendid', ['vcenter1', 'libvirt1'], indirect=True)
@@ -85,7 +85,6 @@ def hypervisor_collector_with_retries(backendid, retries, config_manager):
     filtered_list = [b for b in config_data.backends if b.id == backendid]
     hypervisor_coll = HypervisorCollector(backend=filtered_list[0], retries=retries)
     return hypervisor_coll
-
 
 @pytest.fixture
 def log_level(request):

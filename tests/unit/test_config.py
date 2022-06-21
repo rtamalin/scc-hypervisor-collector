@@ -1,6 +1,7 @@
+import os
 import pytest
 
-from scc_hypervisor_collector.api import exceptions, ConfigManager
+from scc_hypervisor_collector.api import exceptions, ConfigManager, CredentialsConfig, BackendConfig
 
 class TestConfigManager:
 
@@ -59,8 +60,6 @@ class TestConfigManager:
         backend_config_ids = []
         for backend in backends:
             backend_config_ids.append(backend['id'])
-        # skip test for now since the behavior for backends is
-        # only listing the contents from the last file loaded.
         assert "first_vmware_1" in backend_config_ids
         assert "second_vmware_1" in backend_config_ids
 
@@ -75,9 +74,7 @@ class TestConfigManager:
         backend_config_ids = []
         for backend in backends:
             backend_config_ids.append(backend['id'])
-        # skip test for now since the behavior for backends is
-        # only listing the contents from the last file loaded.
-        #assert "multiple_Libvirt_1" in backend_config_ids
+        assert "multiple_Libvirt_1" in backend_config_ids
         assert "multiple_VCenter_1" in backend_config_ids
 
     @pytest.mark.config('tests/unit/data/config/multiple/scc.yml', 'tests/unit/data/config/multiple')
@@ -99,7 +96,7 @@ class TestConfigManager:
         assert scc_config.password == 'default_scc_password'
 
     @pytest.mark.config('tests/unit/data/config/invalid/invalid.yaml', None)
-    def test_invalid_dir_config_data(self, config_manager):
+    def test_invalid_config_data(self, config_manager):
         with pytest.raises(exceptions.CollectorConfigContentError):
             assert "Invalid configuration data provided" in config_manager.config_data
 
@@ -152,7 +149,7 @@ class TestConfigManager:
             config_manager.config_data
 
     @pytest.mark.config('tests/unit/data/config/negative/idlessbackend.yaml', None)
-    def test_id_generation(self, config_manager):
+    def test_missing_backendid(self, config_manager):
         with pytest.raises(exceptions.BackendConfigError):
             config_manager.config_data
 
@@ -207,5 +204,36 @@ class TestConfigManager:
 
     def test_no_config_file_nor_dir(self):
         with pytest.raises(exceptions.ConfigManagerError, match=r"At least one of .* must be specified!"):
-            from scc_hypervisor_collector.api import ConfigManager
             ConfigManager(config_file=None, config_dir=None)
+
+    def test_config_file_incorrect_permissions(self):
+        filename='tests/unit/data/config/perm/perm.yml'
+        os.chmod(filename, 0o777)
+        with pytest.raises(exceptions.ConfigManagerError,
+                           match=r".* should have read/write access .* but group and others should have no access."):
+            config_manager = ConfigManager(config_file=filename)
+            config_manager.config_data
+
+    def test_config_dir_incorrect_permissions(self):
+        dirname='tests/unit/data/config/perm'
+        os.chmod(dirname, 0o777)
+        with pytest.raises(exceptions.ConfigManagerError,
+                           match=r".* should have full access to .* but group and others should have no access."):
+            config_manager = ConfigManager(config_dir=dirname)
+            config_manager.config_data
+
+    @pytest.mark.config('tests/unit/data/config/default/default.yaml', None)
+    def test_children(self, config_manager):
+        children = config_manager.config_data.children
+        assert len(children) == 3 # 1 scc config + 2 backend config
+        for each in children:
+            if isinstance(each, CredentialsConfig):
+                assert each.scc.username == "default_scc_username"
+                assert each.scc.password == "default_scc_password"
+            if isinstance(each, BackendConfig):
+                assert each.id
+
+    @pytest.mark.config('tests/unit/data/config/default/default.yaml', None)
+    def test_logger(self, config_manager):
+        logger = config_manager.config_data.logger
+        assert 'scc_hypervisor_collector.api.configuration' in logger.name

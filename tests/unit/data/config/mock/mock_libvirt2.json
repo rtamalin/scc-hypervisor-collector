@@ -1,0 +1,26 @@
+{
+    "sle15-dev-2": {
+        "cpuArch": "x86_64",
+        "cpuDescription": "Nehalem-IBRS",
+        "cpuVendor": "Intel",
+        "hostIdentifier": "8f2d90ed-4743-4a26-93dc-43cfe8477bf8",
+        "name": "sle15-dev-2",
+        "optionalVmData": {
+            "node2-SLE-12-SP5": {
+                "vmState": "running"
+            },
+            "node2-SLE-15-SP3-QU2": {
+                "vmState": "running"
+            }
+        },
+        "totalCpuCores": 1,
+        "totalCpuSockets": 4,
+        "totalCpuThreads": 1,
+        "ramMb": 262109,
+        "type": "QEMU",
+        "vms": {
+            "node2-SLE-12-SP5": "7bdc1025-3100-442c-a70d-36ef14335b8d",
+            "node2-SLE-15-SP3-QU2": "fbef3f2c-d113-4d92-92ac-8cb18926dfce"
+        }
+    }
+}
