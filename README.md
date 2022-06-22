@@ -12,11 +12,17 @@ The `scc-hypervisor-collector` primarily depends on:
 * [uyuni/virtual-host-gatherer](https://github.com/uyuni/virtual-host-gatherer) >= 1.0.23
 * [pyyaml](https://pypi.org/project/PyYAML/) >= 6.0
 
+Additionally the man pages generation process depends on the following tools
+being available:
+* [pandoc](https://hackage.haskell.org/package/pandoc)
+
 # Contributing
 This project uses the following tools as part of the development process:
 * `tox` to manage testing, including support for multiple Python interpreter
   versions using `pyenv`.
 * `bumpversion` to manage version updates.
+* `pandoc` to generate man pages from Markdown inputs.
+  See [man pages README](doc/man/README.md)
 * optionally `black` to manage code style/layout.
 
 ## Helper scripts
@@ -40,6 +46,10 @@ In the [bin directory](bin/) a number of helper scripts are provided:
 * `scc-hypervisor-collector` and `virtual-host-gatherer` - `tox_dev-wrapper`
   symlinks that can be used to run the `scc-hypervisor-collector` and
   `virtual-host-gatherer` commands.
+
+NOTE:
+* `pandoc` is not available as a helper script and instead should be
+  installed via your local package manager.
 
 ## Testing
 The [tox.ini] file is configured to run the following tests:
