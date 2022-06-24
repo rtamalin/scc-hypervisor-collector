@@ -48,5 +48,4 @@ cmd_args=(
     "${@}"
 )
 
-set -vx
 su - ${shcuser} --shell /bin/bash -c "${cmd_args[*]}"

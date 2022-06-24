@@ -93,6 +93,18 @@ Additionally a [Dockerfile](container/Dockerfile) (suitable for building a
 container image in OBS) and an accompanying [entrypoint script](container/entrypoint.bash)
 are provided in the [container directory](container).
 
+# Running the scc-hypervisor-collector
+
+See the [man pages](doc/man) for details about running the command locally.
+
+See [Security Recommendations](doc/Security.md) for further details about
+ensuring the configuration settings and runtime environment for the command
+are correctly setup.
+
+See [Container Deployment](doc/Container_Deployment.md) for details on how to
+run the command using a container image built using the [Dockerfile](container/Dockerfile)
+and the [Open Build Service](https://build.opensuse.org).
+
 # The scc-hypervisor-collector design
 The tool is broken down into a number of component APIs which are implemented as
 subpackages within the main `scc-hypervisor-collector` package.
