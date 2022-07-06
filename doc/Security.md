@@ -23,7 +23,7 @@ This applies to all configuration files, whether specified directly via
 the `--config` option, or found under the `--config-dir` directory,
 which defaults to `~/.config/scc-hypervisor-collector`.
 
-## Password SSH Keys
+## Passwordless SSH Keys
 
 The SSH tools themselves impose restrictions on the access permissions
 and ownership of SSH private keys, similar to those that are specified
