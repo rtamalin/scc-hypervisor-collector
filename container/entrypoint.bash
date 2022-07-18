@@ -13,7 +13,7 @@ _localstatedir=/var
 _svcdir=${_localstatedir}/lib/${shcuser}
 _certdir=${_svcdir}/certs
 
-[ -d ${_certdir} ] && cp ${_certdir}/* /etc/pki/trust/anchors
+[ -d ${_certdir} ] && cp -a ${_certdir}/* /etc/pki/trust/anchors
 
 update-ca-certificates
 
