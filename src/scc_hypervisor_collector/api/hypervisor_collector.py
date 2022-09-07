@@ -160,8 +160,8 @@ class HypervisorCollector:
             self._details = {
                 "virtualization_hosts": [{
                     "identifier": i['hostIdentifier'],
+                    "group_name": self.backend.id,
                     "properties": {
-                        "group_name": self.backend.id,
                         "name": i['name'],
                         "arch": i['cpuArch'],
                         # cast these values as integers with int()

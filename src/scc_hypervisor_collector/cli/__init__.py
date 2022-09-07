@@ -86,6 +86,23 @@ def check_scc_credentials(scc_credentials_check: bool,
         sys.exit(0)
 
 
+def upload(cfg_mgr: ConfigManager, scheduler: CollectionScheduler,
+           logger: logging.Logger) -> None:
+    """
+        Upload the hypervisor details to SCC
+    """
+    uploader = SCCUploader(cfg_mgr.config_data.credentials.scc)
+    for hv in scheduler.hypervisors:
+        if hv.succeeded:
+            logger.info("Uploading details to SCC for %s",
+                        hv.backend)
+            uploader.upload(hv)
+        else:
+            logger.error("Not Uploading details to SCC for %s "
+                         "as collection for this backend failed",
+                         hv.backend)
+
+
 def main(argv: Optional[Sequence[str]] = None) -> None:
     """Implements CLI for the scc-hypervisor-gatherer."""
     parser = argparse.ArgumentParser(
@@ -169,9 +186,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         sys.exit(1)
 
     if args.upload:
-        uploader = SCCUploader(cfg_mgr.config_data.credentials.scc)
-        for hv in scheduler.hypervisors:
-            uploader.upload(hv.details)
+        upload(cfg_mgr=cfg_mgr, scheduler=scheduler, logger=logger)
     else:
         # TODO(mbelur): Write the contents to a file
         for hv in scheduler.hypervisors:
