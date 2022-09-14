@@ -101,6 +101,7 @@ chmod -R g-rwx,o-rwx examples
 %{buildroot}%{_bindir}/%{name} --check --config examples/shc_cfg.yaml
 
 # run tests
+export NO_NETWORK_ACCESS=true
 pytest -vv
 
 %pre
