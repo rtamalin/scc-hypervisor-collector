@@ -1,4 +1,7 @@
+import os
 import pytest
+
+no_network_access = (os.environ.get('NO_NETWORK_ACCESS', 'False').lower() in ['1', 'yes', 'true'])
 
 class TestSCCHypervisorCollectorCLI:
     """Class for scc-hypervisor-collector cli tests"""
@@ -114,6 +117,7 @@ class TestSCCHypervisorCollectorCLI:
             scc_hypervisor_collector_cli.main()
         assert "No backends specified in config!" in caplog.text
 
+    @pytest.mark.skipif(no_network_access, reason="No network available")
     def test_scc_credentials_check_option(self, capsys, monkeypatch, scc_hypervisor_collector_cli):
         monkeypatch.setattr("sys.argv", ["scc-hypervisor-collector", "--scc-credentials-check",  "--config", "tests/unit/data/config/mock/config.yaml"])
         with pytest.raises(SystemExit):
