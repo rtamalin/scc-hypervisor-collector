@@ -175,10 +175,10 @@ class HypervisorCollector:
                     },
                     "systems": [{
                         "uuid": u,
-                        "properties": {
-                            "vm_name": v,
-                            "data": dict(tuple(i['optionalVmData'][v].items()))
-                        }
+                        "properties": dict(
+                            [("vm_name", v)] +
+                            list(i['optionalVmData'][v].items())
+                        )
                     } for v, u in i['vms'].items()],
                 } for h, i in self.results.items()]
             }
