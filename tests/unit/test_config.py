@@ -13,6 +13,15 @@ class TestConfigManager:
         assert config_data.get('credentials')['scc']['username'] == 'default_scc_username'
         assert config_data.get('credentials')['scc']['password'] == 'default_scc_password'
 
+    @pytest.mark.config('tests/unit/data/config/scc_url/default.yaml', None)
+    def test_scc_server_url_specified(self, config_manager):
+        assert config_manager.config_data.credentials.scc.url != 'https://scc.suse.com'
+        assert config_manager.config_data.credentials.scc.url == 'https://scc.example.com'
+
+    @pytest.mark.config('tests/unit/data/config/default/default.yaml', None)
+    def test_scc_server_url_not_specified(self, config_manager):
+        assert config_manager.config_data.credentials.scc.url == 'https://scc.suse.com'
+
     @pytest.mark.config(None, 'tests/unit/data/config/empty')
     def test_empty_config_load(self, config_manager):
         with pytest.raises(exceptions.EmptyConfigurationError) as excinfo:

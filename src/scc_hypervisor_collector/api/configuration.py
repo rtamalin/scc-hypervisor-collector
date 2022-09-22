@@ -366,16 +366,23 @@ class BackendConfig(GeneralConfig):
 class SccCredsConfig(GeneralConfig):
     """Hypervisor Collector SCC credentials settings.
 
-    The SCC credentials configuration settings hold the following
-    settings:
+    The SCC credentials configuration settings must provide the following
+    entries:
       * username
       * password
+
+    Additionally the SCC credentials settings can provide a url entry that
+    specifies an alternate SCC server to be used for uploading collected
+    details.
 
     Read-only properties are defined for each setting.
 
     Special properties:
         username: The SCC Account username
         password: The SCC Account password
+
+    Optional properties:
+        url: The SCC server url to use, defaults to 'https://scc.suse.com'
     """
 
     def __init__(self, *args: Any, **kwargs: Any):
@@ -420,6 +427,12 @@ class SccCredsConfig(GeneralConfig):
         """The SCC Account password."""
 
         return self['password']
+
+    @property
+    def url(self) -> str:
+        """The SCC server url."""
+
+        return self.get('url', 'https://scc.suse.com')
 
 
 class CredentialsConfig(GeneralConfig):
