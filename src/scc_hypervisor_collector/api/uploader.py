@@ -8,6 +8,7 @@ credentials.
 import json
 import logging
 import gzip
+from typing import Optional
 from importlib_metadata import version as get_package_version
 import requests
 from requests.exceptions import RequestException
@@ -20,9 +21,13 @@ class SCCUploader:
     """SCC Uploader for scc-hypervisor-collector."""
 
     def __init__(self, scc_creds: SccCredsConfig,
-                 scc_base_url: str = 'https://scc.suse.com'):
+                 scc_base_url: Optional[str] = None):
         """Initialiser for SCCUploader"""
         self._log = logging.getLogger(__name__)
+
+        # handle default parameters
+        if scc_base_url is None:
+            scc_base_url = scc_creds.url
 
         # save the parameters
         self._scc_creds = scc_creds
