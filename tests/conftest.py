@@ -2,7 +2,11 @@ import pathlib
 import pytest
 import os
 
-from scc_hypervisor_collector.api import ConfigManager, HypervisorCollector
+from scc_hypervisor_collector.api import (
+    ConfigManager,
+    CollectionResults,
+    HypervisorCollector,
+)
 from scc_hypervisor_collector import cli
 
 
@@ -44,6 +48,13 @@ def hypervisor_collector(backendid, config_manager):
 def scc_hypervisor_collector_cli(monkeypatch, tmp_path):
     monkeypatch.setenv("HOME", str(tmp_path))
     return cli
+
+@pytest.fixture
+def collected_results(request):
+    marker = request.node.get_closest_marker("config")
+    colresults = CollectionResults()
+    colresults.load(pathlib.Path(marker.args[0]))
+    return colresults
 
 def pytest_configure(config):
     config.addinivalue_line(

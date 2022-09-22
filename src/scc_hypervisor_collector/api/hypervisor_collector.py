@@ -18,8 +18,67 @@ Other potential backends, at the time of writing this, are:
 """
 
 import logging
-from typing import (cast, Dict, Optional, Sequence)
+from typing import (cast, Dict, Optional, Sequence, Union)
 from .configuration import BackendConfig
+
+
+class HypervisorDetails:
+    """Hypervisor details collected by HypervisorCollector
+
+    This class is used to hold the hypervisor details that have
+    been collected by the hypervisor collector.
+
+    Special Properties:
+        details: The hypervisor details.
+        backend: The hypervisor backend.
+    """
+    def __init__(self, hv_input: Union[Dict, 'HypervisorCollector']):
+        if isinstance(hv_input, Dict):
+            backend = hv_input['backend']
+            details = hv_input['details']
+        elif isinstance(hv_input, HypervisorCollector):
+            backend = hv_input.backend.id
+            details = self._generate_hv_details(hv_input)
+        self._backend: str = backend
+        self._details: Dict = details
+
+    @staticmethod
+    def _generate_hv_details(hv: 'HypervisorCollector') -> Dict:
+        return {
+            "virtualization_hosts": [{
+                "identifier": i['hostIdentifier'],
+                "group_name": hv.backend.id,
+                "properties": {
+                    "name": i['name'],
+                    "arch": i['cpuArch'],
+                    # cast these values as integers with int()
+                    # to avoid issues seem when trying to
+                    # yaml.safe_dump() them for VMware backends.
+                    "cores": int(i['totalCpuCores']),
+                    "sockets": int(i['totalCpuSockets']),
+                    "threads": int(i['totalCpuThreads']),
+                    "ram_mb": i.get('ramMb'),
+                    "type": i['type']
+                },
+                "systems": [{
+                    "uuid": u,
+                    "properties": dict(
+                        [("vm_name", v)] +
+                        list(i['optionalVmData'][v].items())
+                    )
+                } for v, u in i['vms'].items()],
+            } for h, i in hv.results.items()]
+        }
+
+    @property
+    def backend(self) -> str:
+        """Return the associated backend name."""
+        return self._backend
+
+    @property
+    def details(self) -> Dict:
+        """Return details about the hypervisor and it's VMs."""
+        return self._details
 
 
 class HypervisorCollector:
@@ -74,7 +133,7 @@ class HypervisorCollector:
 
         # Lazy loaded attributes
         self._results: Optional[Dict] = None
-        self._details: Optional[Dict] = None
+        self._details: Optional[HypervisorDetails] = None
 
         self._status = 'pending'
 
@@ -157,33 +216,9 @@ class HypervisorCollector:
     def details(self) -> Dict:
         """Details about the hypervisor and it's VMs."""
         if self._details is None:
-            self._details = {
-                "virtualization_hosts": [{
-                    "identifier": i['hostIdentifier'],
-                    "group_name": self.backend.id,
-                    "properties": {
-                        "name": i['name'],
-                        "arch": i['cpuArch'],
-                        # cast these values as integers with int()
-                        # to avoid issues seem when trying to
-                        # yaml.safe_dump() them for VMware backends.
-                        "cores": int(i['totalCpuCores']),
-                        "sockets": int(i['totalCpuSockets']),
-                        "threads": int(i['totalCpuThreads']),
-                        "ram_mb": i.get('ramMb'),
-                        "type": i['type']
-                    },
-                    "systems": [{
-                        "uuid": u,
-                        "properties": dict(
-                            [("vm_name", v)] +
-                            list(i['optionalVmData'][v].items())
-                        )
-                    } for v, u in i['vms'].items()],
-                } for h, i in self.results.items()]
-            }
+            self._details = HypervisorDetails(self)
 
-        return cast(Dict, self._details)
+        return self._details.details
 
     @property
     def pending(self) -> bool:

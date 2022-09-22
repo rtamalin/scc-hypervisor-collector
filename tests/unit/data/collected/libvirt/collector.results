@@ -1,0 +1,27 @@
+- backend: libvirt1
+  details:
+    virtualization_hosts:
+    - group_name: libvirt1
+      identifier: 2c0638ba-1429-4851-96cf-2e9fd1ce4c8b
+      properties:
+        arch: x86_64
+        cores: 8
+        name: libvirt1.example.com
+        ram_mb: 64235
+        sockets: 2
+        threads: 2
+        type: QEMU
+      systems:
+      - properties:
+          vmState: running
+          vm_name: test-sle12
+        uuid: 01d10a82-5a4e-43cd-9bfb-d9fb5918a3be
+      - properties:
+          vmState: running
+          vm_name: test-sle15
+        uuid: 0324bef3-24e0-4151-9e63-6c5867de6b95
+      - properties:
+          vmState: running
+          vm_name: test-leap154
+        uuid: d556b8dd-832b-4670-83c8-78431b70bfea
+  valid: true
