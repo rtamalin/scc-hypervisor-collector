@@ -25,8 +25,12 @@ class TestCollectionResults:
 
     @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
     def test_collection_results_load(self, collected_results, tmp_path):
+        # create a new empty file under the dynamically generated tmp_path
+        # which will be used as the input when loading collection results,
+        # though we will be subsituting the results from collected_results
+        # as the return value for the yaml.safe_load() operation.
         results_file = tmp_path / 'collected.results'
-        results_file.touch(mode=0o600)  # ensure results file exists with correct mode
+        results_file.touch(mode=0o600)  # ensure temp file exists with valid mode
         with mock.patch('yaml.safe_load',
                         return_value=collected_results.results) as yaml_safe_load:
             collected_results.load(results_file)
@@ -41,16 +45,23 @@ class TestCollectionResults:
 
     @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
     def test_collection_results_load_invalid_perms(self, collected_results, tmp_path):
+        # create a new empty file under the dynamically generated tmp_path
+        # with invalid permissions so that it triggers the desired exception
+        # that we are attempting to catch for testing purposes.
         results_file = tmp_path / 'collected.results'
-        results_file.touch(mode=0o640)  # ensure results file exists with correct mode
+        results_file.touch(mode=0o640)  # ensure temp file exists but with invalid mode
         with pytest.raises(exceptions.ResultsFilePermissionsError,
                            match=r".* should have read/write access to .* but group and others should have no access."):
             collected_results.load(results_file)
 
     @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
     def test_collection_results_load_invalid_user(self, collected_results, tmp_path):
+        # create a new empty file under the dynamically generated tmp_path
+        # with valid permissions, but faked incorrect ownership so that it
+        # triggers the desired exception that we are attempting to catch for
+        # testing purposes.
         results_file = tmp_path / 'collected.results'
-        results_file.touch(mode=0o600)  # ensure results file exists with correct mode
+        results_file.touch(mode=0o600)  # ensure temp file exists with valid mode
         curr_user = getpass.getuser()
         with pytest.raises(exceptions.ResultsFilePermissionsError,
                            match=r".* not owned by the user .*"):
