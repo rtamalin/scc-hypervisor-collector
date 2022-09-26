@@ -530,6 +530,7 @@ class CollectorConfig(GeneralConfig):
 
         self._module: Optional[Any] = None
         self._check = kwargs.pop('_check', False)
+        self._backends_required = kwargs.pop('_backends_required', True)
         self._config_errors = []
         self._children = []
         self._log = logging.getLogger(__name__ + '.CollectorConfig')
@@ -545,6 +546,21 @@ class CollectorConfig(GeneralConfig):
         # Create a dict from the provided arguments
         combined_args = dict(*args, **kwargs)
 
+        # Ensure the credentials are managed as a credentials object
+        self._process_credentials(combined_args)
+
+        # Ensure the backends are managed as backends objects
+        self._process_backends(combined_args)
+
+        super().__init__(_required_fields=required,
+                         _sensitive_fields=sensitive,
+                         _check=self._check,
+                         _config_errors=self._config_errors,
+                         _children=self._children,
+                         **combined_args)
+
+    def _process_credentials(self, combined_args: Dict) -> None:
+        """Process the credentials entry in the combined_args."""
         # Ensure the credentials are managed by a credentials object
         try:
             creds_config = CredentialsConfig(
@@ -562,7 +578,29 @@ class CollectorConfig(GeneralConfig):
             self._config_errors.append(msg)
             if not self._check:
                 raise error
-        self.check_for_backends(combined_args)
+
+    def _check_for_backends(self, combined_args: Dict) -> None:
+        """Check that configuration has a backends list"""
+        if self._backends_required:
+            backends = combined_args.get("backends")
+            if backends is None:
+                msg = "No backends specified in config!"
+                self._log.error(msg)
+                self._config_errors.append(msg)
+                if not self._check:
+                    raise BackendConfigError(msg)
+
+            if not isinstance(backends, list):
+                msg = "The backends entry should a list!"
+                self._log.error(msg)
+                self._config_errors.append(msg)
+                if not self._check:
+                    raise BackendConfigError(msg)
+
+    def _process_backends(self, combined_args: Dict) -> None:
+        """Process the backends list in the combined_args."""
+
+        self._check_for_backends(combined_args)
         try:
             for i, b in enumerate(combined_args["backends"]):
                 try:
@@ -589,13 +627,6 @@ class CollectorConfig(GeneralConfig):
             if not self._check:
                 raise TypeError(msg) from error
 
-        super().__init__(_required_fields=required,
-                         _sensitive_fields=sensitive,
-                         _check=self._check,
-                         _config_errors=self._config_errors,
-                         _children=self._children,
-                         **combined_args)
-
     @property
     def backends(self) -> List[BackendConfig]:
         """The list of backends specified in the config.
@@ -615,12 +646,3 @@ class CollectorConfig(GeneralConfig):
         """
         # return a lightweight copy of the credentials config
         return CredentialsConfig(self['credentials'])
-
-    def check_for_backends(self, combined_args: Dict) -> None:
-        """ check if the configuration has the backends entry"""
-        if not combined_args.get("backends"):
-            msg = "No backends specified in config!"
-            self._log.error(msg)
-            self._config_errors.append(msg)
-            if not self._check:
-                raise BackendConfigError(msg)

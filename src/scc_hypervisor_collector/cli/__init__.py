@@ -6,13 +6,17 @@ import logging
 import os
 import sys
 import traceback
-import json
-from typing import (Any, Optional, Sequence)
+from pathlib import Path
+from typing import (Any, Optional, Sequence, Tuple)
 from logging.handlers import RotatingFileHandler
+import yaml
 
-from scc_hypervisor_collector import __version__ as cli_version
 from scc_hypervisor_collector import (
-    ConfigManager, CollectionScheduler, SCCUploader
+    __version__ as cli_version,
+    ConfigManager,
+    CollectionResults,
+    CollectionScheduler,
+    SCCUploader,
 )
 from scc_hypervisor_collector.api import (
     CollectorException
@@ -27,7 +31,7 @@ class PermissionsRotatingFileHandler(RotatingFileHandler):
 
 
 def create_logger(level: str,
-                  logfile: str) -> logging.Logger:
+                  logfile: Path) -> logging.Logger:
     """Create a logger for use with the scc-hypervisor-collector """
     logger = logging.getLogger()
     logger.setLevel(level)
@@ -86,25 +90,26 @@ def check_scc_credentials(scc_credentials_check: bool,
         sys.exit(0)
 
 
-def upload(cfg_mgr: ConfigManager, scheduler: CollectionScheduler,
+def upload(cfg_mgr: ConfigManager, collected: CollectionResults,
            logger: logging.Logger) -> None:
     """
         Upload the hypervisor details to SCC
     """
     uploader = SCCUploader(cfg_mgr.config_data.credentials.scc)
-    for hv in scheduler.hypervisors:
-        if hv.succeeded:
+    for entry in collected.results:
+        if entry.get('valid'):
             logger.info("Uploading details to SCC for %s",
-                        hv.backend)
-            uploader.upload(hv)
+                        entry['backend'])
+            uploader.upload(entry['details'], entry['backend'])
         else:
             logger.error("Not Uploading details to SCC for %s "
                          "as collection for this backend failed",
-                         hv.backend)
+                         entry['backend'])
 
 
-def main(argv: Optional[Sequence[str]] = None) -> None:
-    """Implements CLI for the scc-hypervisor-gatherer."""
+def create_options_parser() -> argparse.ArgumentParser:
+    """Create a parser to parse the CLI arguments."""
+
     parser = argparse.ArgumentParser(
         description="Collect configured hypervisor details and upload to "
                     "SUSE Customer Center (SCC)."
@@ -136,15 +141,26 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     default_log_destination = f"{os.path.expanduser('~')}/" \
                               f"scc-hypervisor-collector.log"
     parser.add_argument('-L', '--logfile', action='store',
-                        default=default_log_destination,
+                        type=Path,
+                        default=Path(default_log_destination),
                         help="path to logfile. "
                              f"Default: {default_log_destination}")
     parser.add_argument('-u', '--upload', action='store_true',
                         default=False, help="Upload the data collected to SCC")
     # TODO(mbelur): change default to True for upload option
+    io_group = parser.add_mutually_exclusive_group()
+    io_group.add_argument('-i', '--input', type=Path, action='store',
+                          help="File from which previously saved collection "
+                               "data should be loaded.")
+    io_group.add_argument('-o', '--output', type=Path, action='store',
+                          help="File in which to save collection data for "
+                               "later reuse.")
 
-    args = parser.parse_args(argv)
+    return parser
 
+
+def setup_logging(args: argparse.Namespace) -> Tuple[logging.Logger, int]:
+    """Setup the logging environment and default log_level."""
     if args.quiet:
         log_level = logging.WARN
     elif args.verbose:
@@ -153,15 +169,34 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         log_level = logging.INFO
 
     logger = create_logger(
-        level=logging.getLevelName(log_level), logfile=args.logfile)
+        level=logging.getLevelName(log_level), logfile=args.logfile
+    )
 
+    return (logger, log_level)
+
+
+def fail_if_run_as_root() -> None:
+    """Fail if effectively being run as root."""
     # Check for privileges - cannot be run as root
     if os.geteuid() == 0:
         sys.exit('This tool cannot be run as root!')
 
+
+def main(argv: Optional[Sequence[str]] = None) -> None:
+    """Implements CLI for the scc-hypervisor-gatherer."""
+
+    parser = create_options_parser()
+
+    args = parser.parse_args(argv)
+
+    logger, log_level = setup_logging(args)
+
+    fail_if_run_as_root()
+
     cfg_mgr = ConfigManager(config_file=args.config,
                             config_dir=args.config_dir,
-                            check=args.check)
+                            check=args.check,
+                            backends_required=not args.input)
 
     try:
         logger.info("ConfigManager: config_data = %s",
@@ -177,20 +212,34 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
     check_scc_credentials(args.scc_credentials_check, cfg_mgr)
 
-    try:
-        scheduler = CollectionScheduler(cfg_mgr.config_data)
-        logger.debug("Scheduler: scheduler = %s", repr(scheduler))
-        scheduler.run()
-    except CollectorException as e:
-        printlog(log_level, e, logger)
-        sys.exit(1)
-
-    if args.upload:
-        upload(cfg_mgr=cfg_mgr, scheduler=scheduler, logger=logger)
+    if args.input:
+        try:
+            collected_results = CollectionResults()
+            collected_results.load(args.input)
+        except CollectorException as e:
+            printlog(log_level, e, logger)
+            sys.exit(1)
     else:
-        # TODO(mbelur): Write the contents to a file
-        for hv in scheduler.hypervisors:
-            print(json.dumps(hv.details))
+        try:
+            scheduler = CollectionScheduler(cfg_mgr.config_data)
+            logger.debug("Scheduler: scheduler = %s", repr(scheduler))
+            scheduler.run()
+            collected_results = scheduler.results
+        except CollectorException as e:
+            printlog(log_level, e, logger)
+            sys.exit(1)
+
+    if args.output:
+        try:
+            collected_results.save(args.output)
+        except CollectorException as e:
+            printlog(log_level, e, logger)
+            sys.exit(1)
+    elif args.upload:
+        upload(cfg_mgr=cfg_mgr, collected=collected_results, logger=logger)
+    else:
+        for hv in collected_results.results:
+            print(yaml.safe_dump(hv))
 
 
 __all__ = ['main']

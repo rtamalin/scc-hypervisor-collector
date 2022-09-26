@@ -1,8 +1,72 @@
 import mock
+import getpass
 import pytest
 
-from scc_hypervisor_collector.api import exceptions, CredentialsConfig, CollectorConfig, CollectionScheduler, SccCredsConfig, HypervisorCollector
+from scc_hypervisor_collector.api import (
+    exceptions, CredentialsConfig, CollectorConfig,
+    CollectionResults, CollectionScheduler,
+    SccCredsConfig, HypervisorCollector
+)
 from tests import utils
+
+
+class TestCollectionResults:
+
+
+    @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
+    def test_collection_results_contents(self, collected_results):
+        libvirt1 = collected_results.results[0]
+        assert libvirt1['backend'] == 'libvirt1'
+        assert libvirt1['valid'] == True
+        libvirt1_details = libvirt1['details']['virtualization_hosts'][0]
+        assert libvirt1_details['group_name'] == 'libvirt1'
+        assert libvirt1_details['properties']['name'] == 'libvirt1.example.com'
+        assert libvirt1_details['systems'][0]['properties']['vm_name'] == 'test-sle12'
+
+    @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
+    def test_collection_results_load(self, collected_results, tmp_path):
+        # create a new empty file under the dynamically generated tmp_path
+        # which will be used as the input when loading collection results,
+        # though we will be subsituting the results from collected_results
+        # as the return value for the yaml.safe_load() operation.
+        results_file = tmp_path / 'collected.results'
+        results_file.touch(mode=0o600)  # ensure temp file exists with valid mode
+        with mock.patch('yaml.safe_load',
+                        return_value=collected_results.results) as yaml_safe_load:
+            collected_results.load(results_file)
+            yaml_safe_load.assert_called_once()
+
+    @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
+    def test_collection_results_save(self, collected_results, tmp_path):
+        results_file = tmp_path / 'collected.results'
+        with mock.patch('yaml.safe_dump') as yaml_safe_dump:
+            collected_results.save(results_file)
+            yaml_safe_dump.assert_called_once()
+
+    @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
+    def test_collection_results_load_invalid_perms(self, collected_results, tmp_path):
+        # create a new empty file under the dynamically generated tmp_path
+        # with invalid permissions so that it triggers the desired exception
+        # that we are attempting to catch for testing purposes.
+        results_file = tmp_path / 'collected.results'
+        results_file.touch(mode=0o640)  # ensure temp file exists but with invalid mode
+        with pytest.raises(exceptions.ResultsFilePermissionsError,
+                           match=r".* should have read/write access to .* but group and others should have no access."):
+            collected_results.load(results_file)
+
+    @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
+    def test_collection_results_load_invalid_user(self, collected_results, tmp_path):
+        # create a new empty file under the dynamically generated tmp_path
+        # with valid permissions, but faked incorrect ownership so that it
+        # triggers the desired exception that we are attempting to catch for
+        # testing purposes.
+        results_file = tmp_path / 'collected.results'
+        results_file.touch(mode=0o600)  # ensure temp file exists with valid mode
+        curr_user = getpass.getuser()
+        with pytest.raises(exceptions.ResultsFilePermissionsError,
+                           match=r".* not owned by the user .*"):
+            with mock.patch('getpass.getuser', return_value=f"{curr_user}1"):
+                collected_results.load(results_file)
 
 
 class TestScheduler:

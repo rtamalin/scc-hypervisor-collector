@@ -104,6 +104,14 @@ class HypervisorCollectorException(CollectorException):
 
 
 # scheduler errors
+class CollectionResultsException(CollectorException):
+    """Base exception class for results exceptions."""
+
+
+class CollectionResultsInvalidData(CollectionResultsException):
+    """Invalid results provided for upload."""
+
+
 class CollectionSchedulerException(CollectorException):
     """Base exception class for scheduler exceptions."""
 
@@ -115,3 +123,20 @@ class SchedulerInvalidConfigError(CollectionSchedulerException):
 # uploader errors
 class SCCUploaderException(CollectorException):
     """Base exception class for uploader exceptions."""
+
+
+# util errors
+class CollectorUtilException(CollectorException):
+    """Base exception class for util exceptions."""
+
+
+class FilePermissionsError(CollectorUtilException):
+    """Invalid file permissions."""
+
+
+class ConfigFilePermissionsError(FilePermissionsError):
+    """Invalid config file permissions."""
+
+
+class ResultsFilePermissionsError(FilePermissionsError):
+    """Invalid config file permissions."""

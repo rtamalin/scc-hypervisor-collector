@@ -7,11 +7,92 @@ the provided backend settings.
 """
 
 import logging
-from typing import (Dict, Sequence, Set)
+from pathlib import Path
+from typing import (Dict, List, Optional, Sequence, Set)
+import yaml
 
 from .configuration import CollectorConfig
-from .exceptions import SchedulerInvalidConfigError
+from .exceptions import (
+    CollectionResultsInvalidData,
+    ResultsFilePermissionsError,
+    SchedulerInvalidConfigError,
+)
 from .hypervisor_collector import HypervisorCollector
+from .util import check_permissions
+
+
+class CollectionResults:
+    """Manage the set of results for a scheduler run.
+
+    Can be used to save out a copy of the results to be loaded later,
+    or to load a set of results to be used as the data to be uploaded.
+    """
+
+    def __init__(self, scheduler: Optional['CollectionScheduler'] = None):
+        self._results: List = []
+        if scheduler:
+            self._get_results_from_scheduler(scheduler)
+
+    @property
+    def results(self) -> List:
+        """Return a copy of the results"""
+        return self._results.copy()
+
+    def _get_results_from_scheduler(self,
+                                    scheduler: 'CollectionScheduler') -> None:
+        """Generate results content using provided scheduler."""
+
+        self._results = [
+            dict(backend=hv.backend.id, details=hv.details,
+                 valid=hv.succeeded)
+            for hv in scheduler.hypervisors
+        ]
+
+    def save(self, file_path: Path) -> None:
+        """Save the results to the specified file."""
+        # create the results file if it doesn't already exist, and ensure
+        # that only user access is permitted.
+        if not file_path.exists():
+            file_path.touch(mode=0o600)
+        else:
+            file_path.chmod(mode=0o600)
+
+        # write the managed results to the specified file
+        with file_path.open("w", encoding="utf-8") as fp:
+            yaml.safe_dump(self._results, fp)
+
+        # validate the file permissions after writing to it
+        check_permissions(file_path, fail_exc=ResultsFilePermissionsError)
+
+    def load(self, file_path: Path) -> None:
+        """Load the result from the specified file."""
+        # validate the file permissions before reading from it
+        check_permissions(file_path, fail_exc=ResultsFilePermissionsError)
+
+        # read the file contents and validate basic structure
+        with file_path.open("r", encoding="utf-8") as fp:
+            results = yaml.safe_load(fp)
+
+        # Perform some basic validity checking on the results content
+        results_valid = True
+        if not isinstance(results, list):
+            results_valid = False
+        elif not all(('backend' in e) and ('valid' in e)
+                     for e in results):
+            results_valid = False
+        elif not all('details' in e
+                     for e in results
+                     if e['valid']):
+            results_valid = False
+
+        # Fail if validity checks fail
+        if not results_valid:
+            raise CollectionResultsInvalidData(
+                'Specified results file contents are invalid'
+            )
+
+        # store loaded data as the results to be managed
+        self._results = results
 
 
 class CollectionScheduler:
@@ -77,6 +158,9 @@ class CollectionScheduler:
             for t in self._hypervisor_types
         }
 
+        # collected results
+        self._results: Optional[CollectionResults] = None
+
         self._log.debug("hv_groups: %s", repr(self._hypervisor_groups))
 
     def _run_hv_type_queries(self, hv_type: str) -> None:
@@ -108,3 +192,10 @@ class CollectionScheduler:
     def hypervisors(self) -> Sequence[HypervisorCollector]:
         """HypervisorCollectors associated with configured backends."""
         return tuple(self._hypervisors)
+
+    @property
+    def results(self) -> CollectionResults:
+        """Return the collected results instance."""
+        if self._results is None:
+            self._results = CollectionResults(scheduler=self)
+        return self._results

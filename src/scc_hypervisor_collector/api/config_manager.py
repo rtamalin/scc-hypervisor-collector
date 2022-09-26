@@ -6,20 +6,20 @@ data and validate that it contains the settings required for correct
 operation of the SCC Hypervisor Collector.
 """
 
-import getpass
 import logging
-import stat
 from pathlib import Path
 from typing import (Any, Dict, List, Optional)
 import yaml
 
 from .configuration import CollectorConfig
 from .exceptions import (
+    ConfigFilePermissionsError,
     ConfigManagerError,
     ConflictingBackendsError,
     EmptyConfigurationError,
     NoConfigFilesFoundError,
 )
+from .util import check_permissions
 
 
 class ConfigManager:
@@ -46,7 +46,8 @@ class ConfigManager:
 
     def __init__(self, config_file: Optional[str] = None,
                  config_dir: Optional[str] = None,
-                 check: bool = False):
+                 check: bool = False,
+                 backends_required: bool = True):
         """Initialiser for ConfigManager"""
         self._log = logging.getLogger("config_manager")
 
@@ -67,6 +68,7 @@ class ConfigManager:
         )
 
         self._check = check
+        self._backends_required = backends_required
 
         # Lazy loaded configuration data
         self._config_data: Optional[CollectorConfig] = None
@@ -121,22 +123,7 @@ class ConfigManager:
     @staticmethod
     def check_permission(path: Path) -> None:
         """Check if path has the required permissions """
-        current_user = getpass.getuser()
-        stats = path.stat()
-        mode = stats.st_mode
-        if path.owner() != current_user:
-            msg = f"{path} not owned by the user {current_user}"
-            raise ConfigManagerError(msg)
-        if path.is_dir():
-            if stat.S_IMODE(mode) != 0o700:
-                msg = f"User { current_user } should have full access to " \
-                      f"{path} but group and others should have no access."
-                raise ConfigManagerError(msg)
-        if path.is_file():
-            if stat.S_IMODE(mode) != 0o600:
-                msg = f"User {current_user} should have read/write access " \
-                      f"to {path} but group and others should have no access."
-                raise ConfigManagerError(msg)
+        check_permissions(path, ConfigFilePermissionsError)
 
     def _remove_idless_duplicates(self, backend: Dict[str, Any],
                                   backends: List[Dict[str, Any]]) -> None:
@@ -264,8 +251,11 @@ class ConfigManager:
         """Return the config_data loaded from the specifed config
            sources."""
         if self._config_data is None:
-            self._config_data = CollectorConfig(self._load_config(),
-                                                _check=self._check)
+            self._config_data = CollectorConfig(
+                self._load_config(),
+                _check=self._check,
+                _backends_required=self._backends_required
+            )
         return self._config_data
 
     @property

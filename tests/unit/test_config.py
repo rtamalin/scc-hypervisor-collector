@@ -218,7 +218,7 @@ class TestConfigManager:
     def test_config_file_incorrect_permissions(self):
         filename='tests/unit/data/config/perm/perm.yml'
         os.chmod(filename, 0o777)
-        with pytest.raises(exceptions.ConfigManagerError,
+        with pytest.raises(exceptions.ConfigFilePermissionsError,
                            match=r".* should have read/write access .* but group and others should have no access."):
             config_manager = ConfigManager(config_file=filename)
             config_manager.config_data
@@ -226,7 +226,7 @@ class TestConfigManager:
     def test_config_dir_incorrect_permissions(self):
         dirname='tests/unit/data/config/perm'
         os.chmod(dirname, 0o777)
-        with pytest.raises(exceptions.ConfigManagerError,
+        with pytest.raises(exceptions.ConfigFilePermissionsError,
                            match=r".* should have full access to .* but group and others should have no access."):
             config_manager = ConfigManager(config_dir=dirname)
             config_manager.config_data

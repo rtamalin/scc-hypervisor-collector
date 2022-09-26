@@ -14,14 +14,22 @@ the SUSE Customer Center.
 See 'ConfigManager' for details on configuration data setup.
 """
 
-from .api import (ConfigManager, CollectionScheduler, SCCUploader)
+from .api import (
+    check_permissions,
+    ConfigManager,
+    CollectionResults,
+    CollectionScheduler,
+    SCCUploader
+)
 
 
 __author = 'Fergal Mc Carthy <fmccarthy@suse.com>'
 __version__ = '0.0.3'
 
 __all__ = [
+    'check_permissions',
     'ConfigManager',
     'CollectionScheduler',
+    'CollectionResults',
     'SCCUploader'
 ]

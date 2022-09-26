@@ -8,13 +8,12 @@ credentials.
 import json
 import logging
 import gzip
-from typing import Optional
+from typing import (Dict, Optional)
 from importlib_metadata import version as get_package_version
 import requests
 from requests.exceptions import RequestException
 
 from .configuration import SccCredsConfig
-from .hypervisor_collector import HypervisorCollector
 
 
 class SCCUploader:
@@ -43,13 +42,13 @@ class SCCUploader:
         }
         self.scc_base_url = scc_base_url
 
-    def upload(self, hv: HypervisorCollector,
+    def upload(self, details: Dict, backend: str,
                path: str =
                '/connect/organizations/virtualization_hosts') -> None:
         """ Upload the collected details to SCC"""
         headers = self.headers
         headers.update({'Content-Encoding': 'gzip'})
-        zipped_payload = gzip.compress(json.dumps(hv.details).encode('utf-8'))
+        zipped_payload = gzip.compress(json.dumps(details).encode('utf-8'))
 
         try:
             response = requests.put(self.scc_base_url + path,
@@ -60,10 +59,10 @@ class SCCUploader:
 
             if response.status_code == 200:
                 self._log.info("Successfully Uploaded details to SCC for %s",
-                               hv.backend)
+                               backend)
             else:
                 self._log.error("Failed to Upload details to SCC for %s",
-                                hv.backend)
+                                backend)
                 if response.status_code == 429:
                     # TODO(mbelur): retry again
                     pass
