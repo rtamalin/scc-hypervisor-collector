@@ -91,7 +91,7 @@ def check_scc_credentials(scc_credentials_check: bool,
 
 
 def upload(cfg_mgr: ConfigManager, collected: CollectionResults,
-           logger: logging.Logger) -> None:
+           logger: logging.Logger, retry: bool) -> None:
     """
         Upload the hypervisor details to SCC
     """
@@ -100,7 +100,9 @@ def upload(cfg_mgr: ConfigManager, collected: CollectionResults,
         if entry.get('valid'):
             logger.info("Uploading details to SCC for %s",
                         entry['backend'])
-            uploader.upload(entry['details'], entry['backend'])
+            uploader.upload(details=entry['details'],
+                            backend=entry['backend'],
+                            retry=retry)
         else:
             logger.error("Not Uploading details to SCC for %s "
                          "as collection for this backend failed",
@@ -147,7 +149,10 @@ def create_options_parser() -> argparse.ArgumentParser:
                              f"Default: {default_log_destination}")
     parser.add_argument('-u', '--upload', action='store_true',
                         default=False, help="Upload the data collected to SCC")
-    # TODO(mbelur): change default to True for upload option
+    parser.add_argument('-r', '--retry_on_rate_limit', action='store_true',
+                        default=False, help="Retry uploading the data "
+                                            "collected to SCC when rate limit "
+                                            "is hit")
     io_group = parser.add_mutually_exclusive_group()
     io_group.add_argument('-i', '--input', type=Path, action='store',
                           help="File from which previously saved collection "
@@ -236,7 +241,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             printlog(log_level, e, logger)
             sys.exit(1)
     elif args.upload:
-        upload(cfg_mgr=cfg_mgr, collected=collected_results, logger=logger)
+        upload(cfg_mgr=cfg_mgr, collected=collected_results, logger=logger,
+               retry=args.retry_on_rate_limit)
     else:
         for hv in collected_results.results:
             print(yaml.safe_dump(hv))
