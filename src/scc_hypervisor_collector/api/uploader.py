@@ -8,6 +8,8 @@ credentials.
 import json
 import logging
 import gzip
+import sys
+import time
 from typing import (Dict, Optional)
 from importlib_metadata import version as get_package_version
 import requests
@@ -43,32 +45,52 @@ class SCCUploader:
         self.scc_base_url = scc_base_url
 
     def upload(self, details: Dict, backend: str,
+               retry: bool = False,
                path: str =
                '/connect/organizations/virtualization_hosts') -> None:
         """ Upload the collected details to SCC"""
+        try:
+            response = self.scc_put(details=details, path=path)
+            self.check_response_status(response, backend)
+            if response.status_code == 429:
+                self._log.error("Too many requests have been sent to SCC")
+                retry_delay_secs = int(response.headers.get('Retry-After',
+                                                            300))
+                if retry:
+                    self._log.info("Waiting to upload to SCC for %s seconds "
+                                   "before sending the request "
+                                   "again", retry_delay_secs)
+                    response = self.scc_put(details=details,
+                                            path=path,
+                                            delay=retry_delay_secs)
+                    self.check_response_status(response, backend)
+                else:
+                    self._log.error("Program will exit as it hit the rate "
+                                    "limit sending requests to SCC")
+                    sys.exit(0)
+        except RequestException:
+            error_msg = "upload to scc failed "
+            self._log.error(error_msg)
+
+    def scc_put(self, details: Dict, path: str,
+                delay: int = 0) -> requests.Response:
+        """
+        Calls the virtualization_hosts SCC API to upload the hypervisor details
+        """
         headers = self.headers
         headers.update({'Content-Encoding': 'gzip'})
         zipped_payload = gzip.compress(json.dumps(details).encode('utf-8'))
 
-        try:
-            response = requests.put(self.scc_base_url + path,
-                                    auth=self.auth,
-                                    headers=headers,
-                                    data=zipped_payload,
-                                    allow_redirects=False)
+        if delay != 0:
+            time.sleep(delay)
 
-            if response.status_code == 200:
-                self._log.info("Successfully Uploaded details to SCC for %s",
-                               backend)
-            else:
-                self._log.error("Failed to Upload details to SCC for %s",
-                                backend)
-                if response.status_code == 429:
-                    # TODO(mbelur): retry again
-                    pass
-        except RequestException:
-            error_msg = "upload to scc failed "
-            self._log.error(error_msg)
+        response = requests.put(self.scc_base_url + path,
+                                auth=self.auth,
+                                headers=headers,
+                                data=zipped_payload,
+                                allow_redirects=False)
+
+        return response
 
     def check_creds(self,
                     path: str =
@@ -81,3 +103,15 @@ class SCCUploader:
                                 headers=self.headers,
                                 allow_redirects=False)
         return response.status_code == 200
+
+    def check_response_status(self, response: requests.Response,
+                              backend: str) -> None:
+        """
+        Check the response status and log appropriately
+        """
+        if response.status_code == 200:
+            self._log.info("Successfully Uploaded details to SCC for %s",
+                           backend)
+        else:
+            self._log.error("Failed to Upload details to SCC for %s",
+                            backend)
