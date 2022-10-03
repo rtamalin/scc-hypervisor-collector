@@ -8,7 +8,13 @@ from scc_hypervisor_collector.api import (
     SCCUploader
 )
 
-FakeResponse = namedtuple('FakeResponse', 'status_code')
+class FakeResponse:
+    def __init__(self, status_code, headers=None):
+        if headers is None:
+            headers = {}
+        self.status_code = status_code
+        self.headers = headers
+
 required_uploader_headers = [
     'X-Gatherer-Version',
     'X-Scc-Hypervisor-Collector-Version',
@@ -118,7 +124,7 @@ class TestUploader:
 
 
     @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
-    def test_upload_hypervisor_details_to_scc_retry(self, collected_results):
+    def test_upload_hypervisor_details_to_scc_retry(self, collected_results, caplog):
         scc_url = 'https://scc.example.com'
         scc_test_path = '/test'
         scc_payload = 'compressed_data'
@@ -128,13 +134,14 @@ class TestUploader:
                                         url=scc_url))
 
         uploader = SCCUploader(scc_creds)
-
-        with mock.patch('requests.put', return_value=FakeResponse(429)
+        delay = 1
+        with mock.patch('requests.put', return_value=FakeResponse(429, {'Retry-After': delay})
                        ) as requests_put:
             for results in collected_results.results:
                 with mock.patch('gzip.compress', return_value=scc_payload):
                     uploader.upload(details=results['details'],
                                     backend=results['backend'],
+                                    retry=True,
                                     path=scc_test_path)
                     requests_put.assert_called_with(
                         scc_url + scc_test_path,
@@ -143,7 +150,36 @@ class TestUploader:
                         data=scc_payload,
                         allow_redirects=False
                     )
+                    assert 'Waiting to upload to SCC for %s seconds before sending the request again', delay in caplog.text
 
+    @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
+    def test_upload_hypervisor_details_to_scc_noretry(self, collected_results, caplog):
+        scc_url = 'https://scc.example.com'
+        scc_test_path = '/test'
+        scc_payload = 'compressed_data'
+
+        scc_creds = SccCredsConfig(dict(password='someuser',
+                                        username='somepass',
+                                        url=scc_url))
+
+        uploader = SCCUploader(scc_creds)
+        with mock.patch('requests.put', return_value=FakeResponse(429, {'Retry-After': 1})
+                       ) as requests_put:
+            for results in collected_results.results:
+                with mock.patch('gzip.compress', return_value=scc_payload):
+                    with pytest.raises(SystemExit):
+                        uploader.upload(details=results['details'],
+                                        backend=results['backend'],
+                                        retry=False,
+                                        path=scc_test_path)
+                        requests_put.assert_called_with(
+                            scc_url + scc_test_path,
+                            auth=uploader.auth,
+                            headers=uploader.headers,
+                            data=scc_payload,
+                            allow_redirects=False
+                        )
+                        assert 'Program will exit as it hit the rate limit sending requests to SCC' in caplog.text
 
     @pytest.mark.config('tests/unit/data/collected/libvirt/collector.results')
     def test_upload_hypervisor_details_put_exception(self, collected_results):
