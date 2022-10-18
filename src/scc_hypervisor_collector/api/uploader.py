@@ -13,7 +13,7 @@ import time
 from typing import (Dict, Optional)
 from importlib_metadata import version as get_package_version
 import requests
-from requests.exceptions import RequestException
+from requests.exceptions import RequestException, Timeout
 
 from .configuration import SccCredsConfig
 
@@ -22,13 +22,17 @@ class SCCUploader:
     """SCC Uploader for scc-hypervisor-collector."""
 
     def __init__(self, scc_creds: SccCredsConfig,
-                 scc_base_url: Optional[str] = None):
+                 scc_base_url: Optional[str] = None,
+                 scc_timeout: Optional[int] = None):
         """Initialiser for SCCUploader"""
         self._log = logging.getLogger(__name__)
 
         # handle default parameters
         if scc_base_url is None:
             scc_base_url = scc_creds.url
+
+        if scc_timeout is None:
+            scc_timeout = scc_creds.timeout
 
         # save the parameters
         self._scc_creds = scc_creds
@@ -43,6 +47,7 @@ class SCCUploader:
             'Content-Type': 'application/json'
         }
         self.scc_base_url = scc_base_url
+        self.scc_timeout = scc_timeout
 
     def upload(self, details: Dict, backend: str,
                retry: bool = False,
@@ -68,6 +73,9 @@ class SCCUploader:
                     self._log.error("Program will exit as it hit the rate "
                                     "limit sending requests to SCC")
                     sys.exit(0)
+        except Timeout:
+            error_msg = "timeout error on scc upload"
+            self._log.error(error_msg)
         except RequestException:
             error_msg = "upload to scc failed "
             self._log.error(error_msg)
@@ -88,7 +96,8 @@ class SCCUploader:
                                 auth=self.auth,
                                 headers=headers,
                                 data=zipped_payload,
-                                allow_redirects=False)
+                                allow_redirects=False,
+                                timeout=self.scc_timeout)
 
         return response
 
@@ -101,7 +110,8 @@ class SCCUploader:
         response = requests.get(self.scc_base_url + path,
                                 auth=self.auth,
                                 headers=self.headers,
-                                allow_redirects=False)
+                                allow_redirects=False,
+                                timeout=self.scc_timeout)
         return response.status_code == 200
 
     def check_response_status(self, response: requests.Response,
