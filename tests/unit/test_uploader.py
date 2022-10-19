@@ -27,11 +27,14 @@ class TestUploader:
         scc_url1 = 'https://scc1.example.com'
         scc_url2 = 'https://scc2.example.com'
         scc_token = 'dummy_token'
+        scc_timeout = '10'
 
         scc_creds = SccCredsConfig(dict(password='someuser',
                                         username='somepass',
-                                        url=scc_url1))
+                                        url=scc_url1,
+                                        timeout=scc_timeout))
         assert scc_creds.url == scc_url1
+        assert scc_creds.timeout == scc_timeout
 
         with mock.patch('requests.auth.HTTPBasicAuth',
                         return_value=scc_token) as http_basic_auth:
@@ -63,7 +66,8 @@ class TestUploader:
                 scc_url + scc_test_path,
                 auth=uploader.auth,
                 headers=uploader.headers,
-                allow_redirects=False
+                allow_redirects=False,
+                timeout=scc_creds.timeout
             )
 
 
@@ -91,7 +95,8 @@ class TestUploader:
                         auth=uploader.auth,
                         headers=uploader.headers,
                         data=scc_payload,
-                        allow_redirects=False
+                        allow_redirects=False,
+                        timeout=scc_creds.timeout
                     )
 
 
@@ -119,7 +124,8 @@ class TestUploader:
                         auth=uploader.auth,
                         headers=uploader.headers,
                         data=scc_payload,
-                        allow_redirects=False
+                        allow_redirects=False,
+                        timeout=scc_creds.timeout
                     )
 
 
@@ -148,7 +154,8 @@ class TestUploader:
                         auth=uploader.auth,
                         headers=uploader.headers,
                         data=scc_payload,
-                        allow_redirects=False
+                        allow_redirects=False,
+                        timeout=scc_creds.timeout
                     )
                     assert 'Waiting to upload to SCC for %s seconds before sending the request again', delay in caplog.text
 
@@ -177,7 +184,8 @@ class TestUploader:
                             auth=uploader.auth,
                             headers=uploader.headers,
                             data=scc_payload,
-                            allow_redirects=False
+                            allow_redirects=False,
+                            timeout=scc_creds.timeout
                         )
                         assert 'Program will exit as it hit the rate limit sending requests to SCC' in caplog.text
 

@@ -373,7 +373,8 @@ class SccCredsConfig(GeneralConfig):
 
     Additionally the SCC credentials settings can provide a url entry that
     specifies an alternate SCC server to be used for uploading collected
-    details.
+    details and also a timeout setting for requests to SCC to stop
+    waiting for a response after a given number of seconds.
 
     Read-only properties are defined for each setting.
 
@@ -383,6 +384,7 @@ class SccCredsConfig(GeneralConfig):
 
     Optional properties:
         url: The SCC server url to use, defaults to 'https://scc.suse.com'
+        timeout: time in seconds to wait for a response, defaults to 60 seconds
     """
 
     def __init__(self, *args: Any, **kwargs: Any):
@@ -433,6 +435,12 @@ class SccCredsConfig(GeneralConfig):
         """The SCC server url."""
 
         return self.get('url', 'https://scc.suse.com')
+
+    @property
+    def timeout(self) -> int:
+        """The requests timeout parameter"""
+
+        return self.get('timeout', 60)
 
 
 class CredentialsConfig(GeneralConfig):
