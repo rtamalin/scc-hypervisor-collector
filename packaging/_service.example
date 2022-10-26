@@ -18,21 +18,11 @@
   </service>
   <service name="extract_file" mode="manual">
     <param name="archive">scc-hypervisor-collector*.tar.xz</param>
-    <param name="files">scc-hypervisor-collector-*/container/Dockerfile</param>
-    <param name="files">scc-hypervisor-collector-*/container/entrypoint.bash</param>
+    <param name="files">scc-hypervisor-collector-*/scc-hypervisor-collector.spec</param>
+    <param name="files">scc-hypervisor-collector-*/systemd/scc-hypervisor-collector.service</param>
+    <param name="files">scc-hypervisor-collector-*/systemd/scc-hypervisor-collector.timer</param>
   </service>
-  <service name="kiwi_metainfo_helper" mode="buildtime"/>
-  <service name="replace_using_package_version" mode="buildtime">
-    <param name="file">Dockerfile</param>
-    <param name="regex">%PKG_VERSION%</param>
-    <param name="package">scc-hypervisor-collector-common</param>
-    <param name="parse-version">patch_update</param>
+  <service name="set_version" mode="manual">
+    <param name="file">scc-hypervisor-collector.spec</param>
   </service>
-  <service name="replace_using_package_version" mode="buildtime">
-    <param name="file">Dockerfile</param>
-    <param name="regex">%TAG_OFFSET%</param>
-    <param name="package">scc-hypervisor-collector-common</param>
-    <param name="parse-version">offset</param>
-  </service>
-  <service mode="buildtime" name="docker_label_helper"/>
 </services>
