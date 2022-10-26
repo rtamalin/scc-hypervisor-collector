@@ -80,7 +80,6 @@ test_requirements = [
 
 # Recommened developer tools
 dev_requirements = [
-    "black",
     "bumpversion",
     "tox",
 ]
