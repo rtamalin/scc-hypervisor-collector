@@ -23,7 +23,6 @@ This project uses the following tools as part of the development process:
 * `bumpversion` to manage version updates.
 * `pandoc` to generate man pages from Markdown inputs.
   See [man pages README](doc/man/README.md)
-* optionally `black` to manage code style/layout.
 
 ## Helper scripts
 In the [bin directory](bin/) a number of helper scripts are provided:
@@ -36,7 +35,6 @@ In the [bin directory](bin/) a number of helper scripts are provided:
 * `tox` - a `command-wrapper` symlink that can be used to run `tox`.
 * `bumpversion` and `bump2version` - `command-wrapper` symlinks that
    can be used to run the `bumpversion` and `bump2version` commands.
-* `black` - a `command-wrapper` symlink that can be used to run `black`.
 * `tox_dev-wrapper` - a generic command wrapper that can be symlinked
   to a command name, and when invoked via that symlink will look for
   the named command in the `tox` created `.tox/dev` venv, or failing
@@ -62,9 +60,6 @@ The [tox.ini] file is configured to run the following tests:
   skipped.
 
 Additional tests are also available to be run:
-* `py<version>-nocov` - run `pytest` without coverage checking against
-  installed versions of the code for various potential Python versions;
-  missing Python versions will be skipped.
 * `dev` - installs the package's dependencies and then installs the package
   itself in developer mode, allowing you to run the code locally for adhoc
   testing purposes via `bin/scc-hypervisor-collector`.
@@ -84,10 +79,12 @@ tox driven testing. You will still need to install the relevant versions of
 the Python interpreter using `pyenv install <version>` for them to actually be
 available for use by `tox`.
 
-# Packaging Support
+# Package and Container Image Building
 
 An [RPM spec file](scc-hypervisor-collector.spec) is provided which is ready
-to be used by the openSUSE Build Service (OBS).
+to be used by the openSUSE Build Service (OBS) to build SLE 15 SP2/3/4 based
+RPMs. The packaging process leverages the service and timer scripts provided
+under the [systemd directory](systemd).
 
 Additionally a [Dockerfile](container/Dockerfile) (suitable for building a
 container image in OBS) and an accompanying [entrypoint script](container/entrypoint.bash)
@@ -102,7 +99,7 @@ ensuring the configuration settings and runtime environment for the command
 are correctly setup.
 
 See [Container Deployment](doc/Container_Deployment.md) for details on how to
-run the command using a container image built using the [Dockerfile](container/Dockerfile)
+run the command using a container image built using the provided [Dockerfile](container/Dockerfile)
 and the [Open Build Service](https://build.opensuse.org).
 
 # The scc-hypervisor-collector design
