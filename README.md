@@ -90,6 +90,57 @@ Additionally a [Dockerfile](container/Dockerfile) (suitable for building a
 container image in OBS) and an accompanying [entrypoint script](container/entrypoint.bash)
 are provided in the [container directory](container).
 
+## Version Management
+
+The `bin/bumpversion` command should be used to update the version of the
+`scc-hypervisor-collector` tool, following semantic versioning practices
+of `%MAJOR%.%MINOR%.%PATCH%`.
+
+If the version bump is due to merging bug fixes and other minor changes,
+then `patch` should be specified as the argument when calling `bumpversion`
+which will cause the last element of the version to be incremented by one.
+
+If the version bump is due to landing a new feature which enhances the
+`scc-hypervisor-collector` in a backwards compatible way, then `minor` should
+be specified as the the argument to `bumpversion` which will increments the
+middle element of the version and resets the last element to `0`.
+
+If the version bump is due to landing new features or other functionality
+changes that are not backwards compatible, then `major` should be passed as
+the argument when calling `bumpversion` which will increment the first element
+of the version and resets middle and last elements to `0`.
+
+After running the `bumpversion` command the resulting change should be proposed
+as a new PR, to be reviewed, approved, and eventually merged.
+
+## Version Tagging
+
+Whenever the version is updated, once the PR that contains the version change
+has merged, a matching new version tag in the format of `v%VERSION%` should be
+created and pushed to the repository using commands similar to the following,
+where `%old_version%` and `%new_version%` are, respectively, the previous and
+updated versions:
+
+```
+% git tag -m "Bump version: %old_version% → %new_version%" "v%new_version%" origin/main
+% git push --tags origin
+```
+
+## Package and Container Versioning
+
+The current OBS based package build workflow will automatically set the RPM
+package verison to `%VERSION%~git%TAG_OFFSET%.%GIT_SHA%`, so even merged PR
+will result in an updated version. And the same version info will be used to
+generate the version tags for the container image that will be rebuilt in OBS
+whenever the main package gets updated.
+
+See [OBS Maintenance Workflow](doc/OBS_Maintance_Workflow.md) for more details
+on how to ensure that the RPM package is rebuilt to pick up the latest changes
+to the `scc-hypervisor-collector` sources, setup scripts, spec file and systemd
+unit files, as well as how to ensure the container build picks up the latest
+changes to the [Dockerfile](container/Dockerfile) and [entrypoint.bash](container/entrypoint.bash)
+scripts.
+
 # Running the scc-hypervisor-collector
 
 See the [man pages](doc/man) for details about running the command locally.

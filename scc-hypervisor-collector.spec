@@ -25,7 +25,7 @@
 %{?!python_install:%define python_install %{expand:%py3_install}}
 
 Name:           scc-hypervisor-collector
-Version:        0.0.2~git18.e27f17d
+Version:        0.0.5
 Release:        0
 Summary:        Regularly collect and upload hypervisor details to SUSE Customer Care
 License:        Apache-2.0
