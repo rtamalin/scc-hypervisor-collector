@@ -1,0 +1,12 @@
+---
+
+# VMWare vCenter Hypervisor Backends
+backends:
+
+  # A vCenter example
+  - id: "VCenter1"
+    module: "VMware"
+    hostname: "vcenter1.example.com"
+    port: 443
+    username: "VMware_Account_Username"
+    password: "VMware_Account_Password"

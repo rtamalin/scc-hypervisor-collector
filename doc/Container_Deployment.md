@@ -54,10 +54,11 @@ SLE 15 SP3 based container build.
 
 # Container based workflow
 
-The [Dockerfile](../container/Dockerfile) is intended to be run against
-a directory that has been setup appropriately to act as the home directory
-of a user that will run the `scc-hypervisor-collector` command, as defined
-above.
+The image built by the [Dockerfile](../container/Dockerfile), leveraging
+the provided [entrypoint.bash](../container/entrypoint.bash), is intended
+to be run against a directory that has been setup appropriately to act as
+the home directory of a user that will run the `scc-hypervisor-collector`
+command, as defined above.
 
 This directory should be bind mounted to the `/var/lib/scchvc` directory
 when running the tool via a container.

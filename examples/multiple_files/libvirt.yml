@@ -1,0 +1,11 @@
+---
+
+# Libvirt Hypervisor Backends
+backends:
+
+  # A Libvirt hypervisor example
+  - id: "Libvirt1"
+    module: "Libvirt"
+    uri: "qemu+ssh:///system"
+    sasl_username: "Libvirt_Account_Username"
+    sasl_password: "Libvirt_Account_Password"

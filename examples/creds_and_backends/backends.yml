@@ -1,0 +1,19 @@
+---
+
+# Hypervisor Backends
+backends:
+
+  # A Libvirt hypervisor example
+  - id: "Libvirt1"
+    module: "Libvirt"
+    uri: "qemu+ssh:///system"
+    sasl_username: "Libvirt_Account_Username"
+    sasl_password: "Libvirt_Account_Password"
+
+  # A vCenter example
+  - id: "VCenter1"
+    module: "VMware"
+    hostname: "vcenter1.example.com"
+    port: 443
+    username: "VMware_Account_Username"
+    password: "VMware_Account_Password"

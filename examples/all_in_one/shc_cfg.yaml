@@ -17,7 +17,7 @@ backends:
     username: "VMware_Account_Username"
     password: "VMware_Account_Password"
 
-  # A Libvirt Hypervisor node
+  # A Libvirt hypervisor example
   - id: "Libvirt1"
     module: "Libvirt"
     uri: "qemu+ssh:///system"
