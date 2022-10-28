@@ -98,7 +98,9 @@ export PYTHONPATH=%{buildroot}%{python_sitelib}
 # ensure example config permissions are correct
 chmod -R g-rwx,o-rwx examples
 %{buildroot}%{_bindir}/%{name} -h
-%{buildroot}%{_bindir}/%{name} --check --config examples/shc_cfg.yaml
+%{buildroot}%{_bindir}/%{name} --check --config examples/all_in_one/shc_cfg.yaml
+%{buildroot}%{_bindir}/%{name} --check --config-dir examples/creds_and_backends
+%{buildroot}%{_bindir}/%{name} --check --config_dir examples/multiple_files
 
 # run tests
 export NO_NETWORK_ACCESS=true

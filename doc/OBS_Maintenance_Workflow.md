@@ -8,9 +8,11 @@ The `scc-hypervisor-collector` package is built in the Open Build Service
 project.
 
 While an `_service` file is used to manage the retrieval of the sources,
-and the subsequent extraction of the spec file and systemd unit scripts,
-and update the changes file with PRs landed since last recent tag and
-last update, these actions currently need to be triggered manually.
+and the subsequent extraction of the [spec file](../scc-hypervisor-collector.spec)
+and [systemd unit scripts](../systemd), and update the changes file with
+details about the PRs landed since between the most recent tag and last
+update, as well as setting the spec file version appropriately, these
+actions currently need to be triggered manually.
 
 The recommended command sequence to use is as follows, replacing the
 placeholder OBS user account (`obsuser`) with your OBS user name:
@@ -53,8 +55,8 @@ project.
 
 Similarly to the `scc-hypervisor-collector` package, an `_service`
 file is used to manage to retrieval of the sources, and the subsequent
-extraction of the [Dockerfile](container/Dockerfile) and the
-[extrypoint.bash](container/extrypoint.bash) scripts, though again
+extraction of the [Dockerfile](../container/Dockerfile) and the
+[extrypoint.bash](../container/extrypoint.bash) scripts, though again
 these actions currently need to be triggered manually.
 
 The recommended command sequence to use is as follows, replacing the

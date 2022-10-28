@@ -166,19 +166,46 @@ be user access only (0700) for the user that will run the tool.
 The tool cannot be run with root privileges. 
 
 ## `ConfigManager` - Configuration Management
-TBD
+The `ConfigManager` class is implemented in
+[api/config_manger.py](src/scc-hypervisor-collector/api/config_manager.py)
+and leverages the various configuration management classes found in
+[api/configuration.py](src/scc-hypervisor-collector/api/configuration.py)
+to load and validate the `scc-hypervisor-collector` configuration data.
 
 ## `HypervisorCollector` - Collector for Hypervisor details
-TBD
+The `HypervisorCollector` class is implemented in
+[api/hypervisor_collector.py](src/scc-hypervisor-collector/api/hypervisor_collector.py)
+and leverages the
+[Virtual Host Gatherer](https://github.com/uyuni-project/virtual-host-gatherer/)
+as a Python3 library to collect relevant details from the conigfured hypervisor
+solution.
+
+## `CollectionScheduler` - Schedules Hypervisor collection and SCC uploads
+The `CollectionScheduler` class is implemented in
+[api/scheduler.py](src/scc-hypervisor-collector/api/scheduler.py) and is
+responsible for scheduling the retrieval of details from the configured
+hypervisor solutions.
 
 ## `SCCUploader` - Uploads collected Hypervisor details to SCC
-TBD
-
-## `CollectionManager` - Schedules Hypervisor collection and SCC uploads
-TBD
+The `SCCUploader` class is implemented in
+[api/uploader.py](src/scc-hypervisor-collector/api/uploader.py) and is used
+to upload collected hypervisor details to the SUSE Customer Center via the
+[organizations/virtualization_hosts](https://scc.suse.com/connect/v4/documentation#/organizations/put_organizations_virtualization_hosts) API.
 
 ## `cli` - CLI wrapper that drives the other APIs
-TBD
+The `scc_hypervisor_collector.cli:main` routine is implemented in
+[cli/__init__.py](src/scc-hypervisor-collector/cli/__init__.py)
+and provides the command line interface for `scc-hypervisor-collector`.
 
-## Configuration Schema
-TBD
+# Configuration Examples
+See the [examples directory](examples) for examples of configuration
+settings:
+
+* [all_in_one](examples/all_in_one) shows an example of specifying all
+  of the settings in a single configuration file.
+* [creds_and_backends](examples/creds_and_backends) shows an example of
+  specifying the credentials settings in one configuration file and the
+  backends settings in another configuration file.
+* [multiple_files](examples/multiple_files) shows an example of specifying
+  the credentials settings in one configuration file and the various
+  backends settings in backend type specific configuration files.
