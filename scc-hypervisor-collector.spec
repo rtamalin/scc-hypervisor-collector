@@ -44,7 +44,7 @@ BuildRequires:  fdupes
 BuildRequires:  python-rpm-macros
 BuildRequires:  virtual-host-gatherer-Libvirt
 BuildRequires:  virtual-host-gatherer-VMware
-Requires:       %{name}-common-%{version}
+Requires:       %{name}-common == %{version}
 BuildArch:      noarch
 %if 0%{?suse_version} < 1530
 BuildRequires:  %{python_module setuptools}
