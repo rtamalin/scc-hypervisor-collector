@@ -129,3 +129,27 @@ localhost:5000, you could use a command like the following:
 ```
 $ bin/bulk_create -s /tmp/test_linux_systems.yaml -a http://localhost:5000 -u ${SCC_ACCOUNT} -p ${SCC_PASSWORD}
 ```
+
+## Testing SCC VirtualizationHosts API
+
+You can use the `bin/gen_large_datasets` tool (above) to create the synthesised collected results and associated systems details.
+
+Once you have registered the systems using `bin/bulk_create` tool (above) you can now run the `scc-hypervisor-collector` command to upload the synthesised collected results, using the configured SCC credentials, as follows:
+
+```
+$ bin/scc-hypervisor-collector --upload --input /tmp/test_collected_results.yaml
+```
+
+## Cleaning up the fake systems created with `bulk_create`
+
+Once testing has finished you can easily delete all of the fake systems that were registered via the SCC Web UI as follows:
+
+* Log in to the SCC account associated with the Organization that the systems were registered to.
+
+* Select the appropriate organization from the "My Organizations" list
+
+* Select the "Proxies" tab
+
+* Locate the "fake" RMT with the specified UUID (default per the help message for the `bulk_create` tool) and click on the "Show details" link
+
+* Click on the "Delete this registration proxy" button to delete the fake RMT and all associated systems registered via it.
