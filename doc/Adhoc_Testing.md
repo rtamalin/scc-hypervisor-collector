@@ -1,6 +1,6 @@
 # Adhoc Testing
 
-The `bin/gen_large_datasets` utility can be utilies to generate synthesised:
+The `bin/gen_large_datasets` utility can be utilised to generate synthesised:
 
   * "collected" results for simulated VMWare and/or Libvirt hypervisor
     topologiies.
@@ -9,7 +9,7 @@ The `bin/gen_large_datasets` utility can be utilies to generate synthesised:
     created\_at time stamps for the relevant nodes in the simulated
     hypervisor topologiies.
 
-The `bin/bulk_create` utility can be used to create the ficticious systems
+The `bin/bulk_create` utility can be used to create the fictitious systems
 in the simulated hypervisor topologies.
 
 The synthesised results can be passed as then collection details source to
