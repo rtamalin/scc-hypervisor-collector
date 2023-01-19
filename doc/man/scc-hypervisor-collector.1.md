@@ -151,6 +151,18 @@ esx2.dc1-vcenter.example.com:
 
 # OPTIONS
 
+  **-h**, **--help**
+  : Provides basic details about the available command line options.
+
+  **-V**, **--version**
+  : Reports the version of **scc-hypervisor-collector**.
+
+  **-q**, **--quiet**
+  : Runs in quiet mode, only reporting errors.
+
+  **-v**, **--verbose**
+  : Runs in verbose mode, reporting additional details.
+
   **-c**, **--config <CONFIG_FILE>**
   : Specifies a file containing YAML configuration settings. If both
     **--config** and **-config-dir** options are specified, the
@@ -169,21 +181,39 @@ esx2.dc1-vcenter.example.com:
   : Checks the specified configuration settings for correctness, reporting
     any issues found.
 
-  **-h**, **--help**
-  : Provides basic details about the available command line options.
-
-  **-q**, **--quiet**
-  : Runs in quiet mode, only reporting errors.
-
-  **-v**, **--verbose**
-  : Runs in verbose mode, reporting additional details.
-
-  **-V**, **--version**
-  : Reports the version of **scc-hypervisor-collector**.
+  **-S**, **--scc-credentials-check**
+  : Validates that the supplied SCC credentials can be used to connect
+    to the SCC.
 
   **-L**, **--logfile <LOG_FILE>**
   : Specifies the path to the log file in which to write log messages.
     Defaults to **~/scc-hypervisor-collector.log**.
+
+  **-u**, **--upload**
+  : Specifies whether to upload the collected results to the SCC.
+
+  **-r**, **--retry_on_rate_limit**
+  : Specifies whether to retry uploading to SCC when rate limit is hit.
+    If the **scc-hypervisor-collector** is being run frequently, e.g.
+    daily, then it may be preferable to just wait until the next run,
+    rather than delaying and retrying again after the SCC rate limit
+    response's retry delay.
+
+  **-i**, **--input <INPUT_FILE>**
+  : Specifies the path to a YAML file containing previously collected
+    results. If this option is specified then any hypervisor backends
+    configuration will be ignored and the contents of this file, so
+    long as they conform to the expected results layout, will be used
+    as the collected results to be uploaded. This option cannot be used
+    in conjunction with the **-o**/**--output** option.
+
+  **-o**, **--output <OUTPUT_FILE>**
+  : Specifies the path to a file to which the YAML formatted results
+    of the details collected from the specified hypervisor backends
+    will be written. Any existing file contents will be lost, and the
+    file mode settings will be modified so that only ownwer can access
+    it. This option also disables uploading results to the SCC, and
+    cannot be used in conjunction with the **-i**/**--input** option.
 
 # SECURITY CONSIDERATIONS
 
@@ -230,6 +260,32 @@ directory.
 See **ssh-keygen(1)** for more details on how to generate appropriate
 SSH keys if needed, and **ssh(1)** for the appropriate permissions
 for the **~/.ssh/** directory and any keys stored there.
+
+## SEPARATE COLLECTION AND UPLOAD RUNS
+
+Leveraging the **-o**/**--output** and **-i**/**--input** options, it
+will be possible to run the details collection stage only, saving the
+collected results to a file, which can then be uploaded to the SCC in
+a separate run, potentially on a different system.
+
+This allows for customer deployment scenarioes where the system that
+has access to be able to collect details from the hypervisor backends
+may not have internet access to be able to upload the collected details
+to the SCC; the details collection can phase can be run on an internal
+system with the necessary access, with the saved collection results
+then being transferred to another system with internet access that can
+run the upload phase.
+
+### Reviewing and sanitizing the collected results
+
+This separation of the collection and upload phases also allows the
+collected results data to be reviewed and potentially sanitised, e.g.
+hostnames and VM names can be changed.
+
+However, certain values, such as the VM UUIDs and Libvirt host system
+properties and identifiers should not modified as these values are used
+to cross reference collection details with any associated subscriptions
+in the SCC.
 
 # CONFIGURATION SETTINGS
 
