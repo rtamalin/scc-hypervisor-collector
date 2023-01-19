@@ -1,0 +1,242 @@
+#!/usr/bin/env python3
+
+import argparse
+import datetime
+from pathlib import Path
+import re
+import sys
+import uuid
+import yaml
+
+try:
+    from scc_hypervisor_collector import CollectionResults
+except ImportError as e:
+    exit("The 'scc-hypervisor-collector' package must be installed; did you forget to activate the relevant virtualenv?")
+
+def creation_time():
+    return f"{datetime.datetime.utcnow().isoformat(sep=' ')}000 +0000"
+
+non_alnum_re = re.compile(r'[\W_]+')
+
+def strip_group_name(name):
+    return non_alnum_re.sub('', name)
+
+def vmware_uuid_mangle(uuid):
+    return ''.join([
+        uuid[6:8],
+        uuid[4:6],
+        uuid[2:4],
+        uuid[0:2],
+        "-",
+        uuid[11:13],
+        uuid[9:11],
+        "-",
+        uuid[16:18],
+        uuid[14:16],
+        uuid[18:]
+    ])
+
+
+def gen_vmware_esx_host_vm(group_name, host_id, vm_id, name_sfx):
+    vm_uuid = str(uuid.uuid4())
+    return {
+        'properties': {
+            'vmState': 'x86_64',
+            'vm_name': f'vm_{strip_group_name(str(group_name) + name_sfx)}_{host_id}_{vm_id}',
+            'vmware_uuid': vmware_uuid_mangle(vm_uuid)
+        },
+        'uuid': vm_uuid,
+    }
+
+
+def gen_vmware_esx_host_details(group_name, host_id, num_vms, name_sfx):
+    return {
+        'group_name': str(group_name) + name_sfx,
+        'identifier': repr(f'vim.HostSystem:host-{str(host_id) + name_sfx}'),
+        'properties': {
+            'arch': 'x86_64',
+            'cores': 12,
+            'name': f'esx{host_id}.{strip_group_name(str(group_name) + name_sfx)}.example.com',
+            'ram_mb': 262108,
+            'sockets': 2,
+            'threads': 24,
+            'type': 'vmware',
+        },
+        'systems': [
+            gen_vmware_esx_host_vm(group_name, host_id, vm_id, name_sfx)
+            for vm_id in range(0, num_vms)
+        ],
+    }
+
+
+def gen_vmware_backend(group_name, num_hosts, num_vms, name_sfx):
+    return {
+        'backend': str(group_name) + name_sfx,
+        'details': {
+            'virtualization_hosts': [
+                gen_vmware_esx_host_details(group_name, host_id, num_vms, name_sfx)
+                for host_id in range(0, num_hosts)
+            ]
+        },
+        'valid': True,
+    }
+
+
+def gen_libvirt_vm(group_name, vm_id, name_sfx):
+    return {
+        'properties': {
+            'vmState': 'x86_64',
+            'vm_name': f'vm_{strip_group_name(str(group_name) + name_sfx)}_{vm_id}',
+        },
+        'uuid': str(uuid.uuid4()),
+    }
+
+
+def gen_libvirt_details(group_name, num_vms, name_sfx):
+    return {
+        'group_name': str(group_name) + name_sfx,
+        'identifier': str(uuid.uuid4()),
+        'properties': {
+            'arch': 'x86_64',
+            'cores': 12,
+            'name': f'{strip_group_name(str(group_name) + name_sfx)}.example.com',
+            'ram_mb': 262108,
+            'sockets': 2,
+            'threads': 24,
+            'type': 'QEMU',
+        },
+        'systems': [
+            gen_libvirt_vm(group_name, vm_id, name_sfx)
+            for vm_id in range(0, num_vms)
+        ],
+    }
+
+
+def gen_libvirt_backend(group_name, num_vms, name_sfx):
+    return {
+        'backend': str(group_name) + name_sfx,
+        'details': {
+            'virtualization_hosts': [
+                gen_libvirt_details(group_name, num_vms, name_sfx),
+            ]
+        },
+        'valid': True,
+    }
+
+
+def main(argv):
+    # default arg values
+    default_vmware_backends = 0
+    default_esx_hosts = 2
+    default_esx_vms = 10
+    default_libvirt_backends = 0
+    default_libvirt_vms = 10
+    default_results = Path('/tmp/test_collected_results.yaml')
+    default_systems = Path('/tmp/test_linux_systems.yaml')
+
+    parser = argparse.ArgumentParser(description=
+        'Generate data sets for SCC VirtualizationHosts API testing'
+    )
+
+    # generated results file
+    parser.add_argument(
+        '-o', '--output', type=Path, action='store', default=default_results,
+        help=f'The output file where the generated data set will be written. (Default: {default_results})'
+    )
+
+    # generated systems file
+    parser.add_argument(
+        '-s', '--systems', type=Path, action='store', default=default_systems,
+        help=f'The output file where details of generated Libvirt and VM systems for use with bulk creation will be written. (Default: {default_systems})'
+    )
+
+    # suffix to add to hostnames, if provided
+    parser.add_argument(
+        '-S', '--suffix', type=str, action='store',
+        help='An optional suffix that will be added to the hostnames of generated system names.'
+    )
+
+    # VMWare related options
+    parser.add_argument(
+        '-V', '--vmware', type=int, action='store', default=default_vmware_backends,
+        help=f'The number of VMWare backends to add to the data set. (Default: {default_vmware_backends})'
+    )
+    parser.add_argument(
+        '-E', '--esx-hosts', type=int, action='store', default=default_esx_hosts,
+        help=f'The number of ESX hosts per VMWare backend. (Default: {default_esx_hosts})'
+    )
+    parser.add_argument(
+        '-e', '--esx-vms', type=int, action='store', default=default_esx_vms,
+        help=f'The number of VMs per ESX host in each VMWare backend. (Default: {default_esx_vms})'
+    )
+
+    # Libvirt related options
+    parser.add_argument(
+        '-L', '--libvirt', type=int, action='store', default=default_libvirt_backends,
+        help=f'The number of Libvirt backends to add to the data set. (Default: {default_libvirt_backends})'
+    )
+    parser.add_argument(
+        '-l', '--libvirt-vms', type=int, action='store', default=default_libvirt_vms,
+        help=f'The number of Libvirt backends to add to the data set. (Default: {default_libvirt_vms})'
+    )
+
+    # parse the supplied arguments
+    args = parser.parse_args(argv)
+
+    if args.suffix:
+        name_sfx = '_' + args.suffix
+    else:
+        name_sfx = ''
+
+    # Generate VMWare backends
+    vmware_backends = [
+        gen_vmware_backend(f'vcenter{vmware_id}', args.esx_hosts, args.esx_vms, name_sfx)
+        for vmware_id in range(0, args.vmware)
+    ]
+
+    # Generate VMWare backends
+    libvirt_backends = [
+        gen_libvirt_backend(f'libvirt{libvirt_id}', args.libvirt_vms, name_sfx)
+        for libvirt_id in range(0, args.libvirt)
+    ]
+
+    collected = CollectionResults()
+    collected._results = vmware_backends + libvirt_backends
+
+    # extract vm uuids from results
+    vm_systems = [
+        dict(name=s['properties']['vm_name'],
+             uuid=s['uuid'],
+             created_at=creation_time(),
+             system_token=str(uuid.uuid4()),
+             hypervisor=v['properties']['type'])
+        for b in collected.results
+        for v in b['details']['virtualization_hosts']
+        for s in v['systems']
+        if b['valid']
+    ]
+
+    # extract libvirt host uuids from results
+    libvirt_host_systems = [
+        dict(name=v['properties']['name'],
+             uuid=v['identifier'],
+             created_at=creation_time(),
+             system_token=str(uuid.uuid4()))
+        
+        for b in collected.results
+        for v in b['details']['virtualization_hosts']
+        if b['valid'] and v['properties']['type'] == 'QEMU'
+    ]
+
+    collected.save(args.output)
+    print(f'Generated collection results saved to: {args.output}')
+
+    with args.systems.open('w') as fp:
+        yaml.safe_dump(dict(vm_systems=vm_systems,
+                            libvirt_host_systems=libvirt_host_systems),
+                       fp)
+    print(f'systems from collection results saved to: {args.systems}')
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

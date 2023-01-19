@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+
+import argparse
+import datetime
+import gzip
+import json
+import os
+from pathlib import Path
+import requests
+import sys
+import yaml
+
+def last_seen_time():
+    #return datetime.datetime.now(datetime.timezone.utc).isoformat(sep=' ')
+    return f"{datetime.datetime.utcnow().isoformat(sep=' ')}000 +0000"
+
+
+class SccConfig:
+
+    def __init__(self, username, password, base_url, timeout = None):
+        if timeout is None:
+            timeout = 60
+
+        self.username = username
+        self.password = password
+        self.base_url = base_url
+        self.timeout = timeout
+
+
+class SccRequest:
+
+    def __init__(self, scc_config, success=200):
+        self._auth = None
+        self.scc_config = scc_config
+        self.default_headers = {
+            'Accept': 'application/vnd.scc.suse.com.v4+json',
+        }
+        self.success = success
+        self.response = None
+
+    @property
+    def username(self):
+        return self.scc_config.username
+
+    @property
+    def password(self):
+        return self.scc_config.password
+
+    @property
+    def base_url(self):
+        return self.scc_config.base_url
+
+    @property
+    def timeout(self):
+        return self.scc_config.timeout
+
+    @property
+    def auth(self):
+        if self._auth is None:
+            self._auth = requests.auth.HTTPBasicAuth(self.username, self.password)
+        return self._auth
+
+    def request_url(self, path):
+        return self.base_url.rstrip('/') + '/' + path.lstrip('/')
+
+    def request_headers(self, extra_headers=None):
+        if extra_headers is None:
+            extra_headers = {}
+
+        headers = {}
+        headers.update(self.default_headers)
+        headers.update(extra_headers)
+
+        return headers
+
+    def put(self, path, payload, extra_headers=None):
+        self.response = requests.put(
+            self.request_url(path),
+            auth=self.auth,
+            headers=self.request_headers(extra_headers),
+            #data=zipped_payload,
+            #data=json.dumps(upload_payload).encode('utf-8'),
+            json=payload,
+            allow_redirects=False,
+            timeout=self.timeout,
+        )
+        self.check_response()
+
+    def put_compressed(self, path, payload, extra_headers=None):
+        if extra_headers is None:
+            extra_headers = {}
+
+        extra_headers['Content-Type'] = 'application/json'
+        extra_headers['Content-Encoding'] = 'gzip'
+
+        compressed_payload = gzip.compress(json.dumps(payload).encode('utf-8'))
+
+        self.response = requests.put(
+            self.request_url(path),
+            auth=self.auth,
+            headers=self.request_headers(extra_headers),
+            data=compressed_payload,
+            allow_redirects=False,
+            timeout=self.timeout,
+        )
+        self.check_response()
+
+    def get(self, path, extra_headers=None):
+        self.response = requests.get(
+            self.request_url(path),
+            auth=self.auth,
+            headers=self.request_headers(extra_headers),
+            allow_redirects=False,
+            timeout=self.timeout
+        )
+        self.check_response()
+
+    def check_response(self):
+        if self.response is None:
+            return
+
+        if not self.failed:
+            print(f"Request: {self.response.url} (SUCCESS {self.response.status_code})")
+            return
+
+        print(f"Request: {self.response.url}")
+        print(f"Status: FAILED ({self.response.status_code})")
+        print(f"Headers: {self.response.headers}")
+        print(f"Reason: {self.response.reason}")
+
+    @property
+    def failed(self):
+        return self.response.status_code != self.success
+
+
+def parse_args(argv):
+
+    # default arg values
+    default_systems = Path('/tmp/test_linux_systems.yaml')
+    default_systems_per_request = 200
+    default_api_base_url = 'http://localhost:3000'
+    default_rmt_name = 'rmt.test.example.com'
+    default_rmt_uuid = 'ecf431f8-7faa-48a4-a3f1-6d3abb199086'
+
+    parser = argparse.ArgumentParser(description=
+        'Bulk create systems SCC VirtualizationHosts API testing'
+    )
+
+    # SCC max systems to upload per request
+    parser.add_argument(
+        '--systems_per_request', type=int, action='store', default=default_systems_per_request,
+        help=f'The max number of systems to upload per request to the SCC. (Default: {default_systems_per_request})'
+    )
+
+    # SCC RMT UUID
+    parser.add_argument(
+        '--rmt_uuid', type=str, action='store', default=default_rmt_uuid,
+        help=f'The RMT UUID to report to the SCC. (Default: {default_rmt_uuid})'
+    )
+
+    # SCC RMT Name
+    parser.add_argument(
+        '--rmt_name', type=str, action='store', default=default_rmt_name,
+        help=f'The RMT name to report to the SCC. (Default: {default_rmt_name})'
+    )
+
+    # SCC API base URL
+    parser.add_argument(
+        '-a', '--api_base_url', type=str, action='store', default=default_api_base_url,
+        help=f'The SCC API base URL. (Default: {default_api_base_url})'
+    )
+
+    # SCC mirroring credentials username
+    parser.add_argument(
+        '-u', '--username', type=str, action='store',
+        help='The SCC mirroring credentials username to use for bulk creation. Can be specified via SCC_USERNAME env var.'
+    )
+
+    # SCC mirroring credentials password
+    parser.add_argument(
+        '-p', '--password', type=str, action='store',
+        help='The SCC mirroring credentials password to use for bulk creation. Can be specified via SCC_PASSWORD env var.'
+    )
+
+    # input systems file
+    parser.add_argument(
+        '-s', '--systems', type=Path, action='store', default=default_systems,
+        help=f'The input file containing the details of the Libvirt host and VM systems to bulk create. (Default: {default_systems})'
+    )
+
+    # check creds are valid
+    parser.add_argument(
+        '-c', '--check_creds', action='store_true', default=False,
+        help='Verify that the supplied SCC mirroring credentials are valid.'
+    )
+
+    # parse the supplied arguments
+    return parser.parse_args(argv)
+
+
+def main(argv):
+    args = parse_args(argv)
+
+    if args.username is None:
+        args.username = os.environ.get('SCC_USERNAME')
+
+    if args.password is None:
+        args.password = os.environ.get('SCC_PASSWORD')
+
+    if args.username is None:
+        exit('The SCC username must be specified either via the --username option, or via the SCC_USERNAME env var.')
+
+    if args.password is None:
+        exit('The SCC password must be specified either via the --password option, or via the SCC_PASSWORD env var.')
+
+    scc_config = SccConfig(args.username, args.password, args.api_base_url)
+
+    with args.systems.open('r') as fp:
+        system_details = yaml.safe_load(fp)
+
+    # generate uploadable VM systems entries
+    vm_systems = [
+        dict(login=v['name'], password=v['name'],
+             hostname=v['name'], system_token=v['system_token'],
+             created_at=v['created_at'], last_seen_at=last_seen_time(),
+             hwinfo=dict(hypervisor=v['hypervisor'], uuid=v['uuid']))
+        for v in system_details['vm_systems']
+    ]
+
+    # generate uploadable Libvirt host systems entries
+    libvirt_systems = [
+        dict(login=l['name'], password=l['name'],
+             hostname=l['name'], system_token=l['system_token'],
+             created_at=l['created_at'], last_seen_at=last_seen_time(),
+             hwinfo=dict(
+                 hypervisor=None,
+                 uuid=l['uuid'])
+        )
+        for l in system_details['libvirt_host_systems']
+    ]
+
+    #print(yaml.safe_dump(upload_payload))
+    #print(json.dumps(upload_payload, indent=2))
+
+    # test creds
+    if args.check_creds:
+        check_creds = SccRequest(scc_config)
+        check_creds.get('/connect/organizations/repositories')
+        if check_creds.failed:
+            exit("Invalid SCC Creds")
+
+    # put organizations/systems
+    systems_to_upload = libvirt_systems + vm_systems
+
+    num_systems = len(systems_to_upload)
+    max_per_upload = args.systems_per_request
+
+    for ind in range(0, num_systems, max_per_upload):
+        print(f'Uploading systems {ind} to {min(ind + max_per_upload, num_systems)} of {num_systems} ...')
+        put_systems = SccRequest(scc_config, success=201)
+        put_systems.put_compressed(
+            '/connect/organizations/systems',
+            dict(systems=systems_to_upload[ind:ind + max_per_upload]),
+            extra_headers={
+                'HOST-SYSTEM': args.rmt_name,
+                'RMT': args.rmt_uuid
+            }
+        )
+        if put_systems.failed:
+            exit("Upload of systems details failed")
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
