@@ -27,7 +27,7 @@
 Name:           scc-hypervisor-collector
 Version:        0.1.0
 Release:        0
-Summary:        Regularly collect and upload hypervisor details to SUSE Customer Care
+Summary:        Regularly collect and upload hypervisor details to SUSE Customer Center
 License:        Apache-2.0
 Group:          System/Management
 URL:            https://github.com/SUSE/scc-hypervisor-collector
@@ -55,7 +55,7 @@ This package contains the systemd timer and service scripts that will
 run the scc-hypervisor-collector on a regular basis.
 
 %package common
-Summary:        Tool to collect and upload hypervisor details to SUSE Customer Care
+Summary:        Tool to collect and upload hypervisor details to SUSE Customer Center
 Group:          System/Management
 Requires:       %{python_module importlib-metadata}
 Requires:       %{python_module PyYAML}
