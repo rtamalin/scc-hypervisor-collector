@@ -31,7 +31,7 @@ class TestSCCHypervisorCollectorCLI:
         with pytest.raises(SystemExit):
             scc_hypervisor_collector_cli.main()
         out, err = capsys.readouterr()
-        assert "usage: scc-hypervisor-collector " in out
+        assert "usage: scc-hypervisor-collector" in out
 
     def test_check_option_success(self, monkeypatch, scc_hypervisor_collector_cli, caplog):
         monkeypatch.setattr("sys.argv", ["scc-hypervisor-collector", "--check", "--config", "tests/unit/data/config/default/default.yaml"])
